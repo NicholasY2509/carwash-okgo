@@ -1,0 +1,115 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "@inertiajs/react";
+import { LoaderCircle } from "lucide-react";
+import { toast } from "sonner";
+import React from "react";
+
+interface CarType {
+    id: number;
+    name: string;
+    description: string | null;
+}
+
+interface Props {
+    carType?: CarType | null;
+    onSuccess: () => void;
+    onCancel: () => void;
+}
+
+export default function CarTypeForm({ carType, onSuccess, onCancel }: Props) {
+    const isEditMode = !!carType;
+
+    const { data, setData, post, patch, processing, errors, reset } = useForm({
+        name: carType?.name || "",
+        description: carType?.description || "",
+    });
+
+    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+
+        if (isEditMode) {
+            patch(route("car-types.update", carType.id), {
+                onSuccess: () => {
+                    toast.success("Tipe mobil berhasil diperbarui.");
+                    onSuccess();
+                },
+                onError: (errors) => {
+                    console.error("Update failed:", errors);
+                },
+            });
+        } else {
+            post(route("car-types.store"), {
+                onSuccess: () => {
+                    reset();
+                    toast.success("Tipe mobil baru berhasil ditambahkan.");
+                    onSuccess();
+                },
+                onError: (errors) => {
+                    console.error("Creation failed:", errors);
+                },
+            });
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <fieldset disabled={processing} className="space-y-4">
+                <div>
+                    <Label htmlFor="name" required>
+                        Nama Tipe Mobil
+                    </Label>
+                    <Input
+                        id="name"
+                        type="text"
+                        placeholder="Contoh: SUV, Sedan, MPV, Hatchback"
+                        value={data.name}
+                        onChange={(e) => setData("name", e.target.value)}
+                        className="mt-1"
+                    />
+                    {errors.name && (
+                        <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+                    )}
+                </div>
+
+                <div>
+                    <Label htmlFor="description">Deskripsi (Opsional)</Label>
+                    <Textarea
+                        id="description"
+                        placeholder="Keterangan opsional tentang tipe mobil..."
+                        value={data.description}
+                        onChange={(e) => setData("description", e.target.value)}
+                        className="mt-1 min-h-[100px]"
+                    />
+                    {errors.description && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {errors.description}
+                        </p>
+                    )}
+                </div>
+            </fieldset>
+
+            <div className="flex justify-end gap-2 mt-6">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onCancel}
+                >
+                    Batal
+                </Button>
+                <Button
+                    type="submit"
+                    variant="default"
+                    disabled={processing}
+                >
+                    {processing && (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {isEditMode ? "Simpan Perubahan" : "Tambah Tipe Mobil"}
+                </Button>
+            </div>
+        </form>
+    );
+}
