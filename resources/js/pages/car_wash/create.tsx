@@ -85,7 +85,7 @@ export default function CarWashCreate() {
     const paymentOptions: { label: string; type: FormType }[] = [
         { label: "Langsung", type: "Cash" },
         { label: "Voucher", type: "Voucher" },
-        { label: "Garansi Hujan", type: "Return" },
+        // { label: "Garansi Hujan", type: "Return" },
     ];
 
     const formRef = useRef<CreateCashPurchaseHandle>(null);

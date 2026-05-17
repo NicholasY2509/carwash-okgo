@@ -30,9 +30,9 @@ export const useTransactionHandler = ({
                 `,
                 showConfirmButton: true,
                 confirmButtonText: "Tutup",
-                showCancelButton: true,
-                cancelButtonText: "Kirim WhatsApp",
-                cancelButtonColor: "#25D366",
+                // showCancelButton: true,
+                // cancelButtonText: "Kirim WhatsApp",
+                // cancelButtonColor: "#25D366",
             }).then((result) => {
                 if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
                     // Format phone number: replace leading '0' with '62'
@@ -40,12 +40,12 @@ export const useTransactionHandler = ({
                     if (phone.startsWith("0")) {
                         phone = "62" + phone.substring(1);
                     }
-                    
+
                     const amount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(newTransaction.total_amount || 0);
                     const product = newTransaction.serviceRecords?.[0]?.product?.name || "Cuci Mobil";
-                    
+
                     const message = `Halo ${newTransaction.customer.name},\n\nTerima kasih telah menggunakan layanan kami!\n\n*Detail Transaksi:*\nNo. Referensi: ${newTransaction.id}\nLayanan: ${product}\nTotal: ${amount}\n\nSemoga harimu menyenangkan!`;
-                    
+
                     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                     window.open(waUrl, "_blank");
                 }
