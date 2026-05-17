@@ -103,10 +103,10 @@ const allNavItems = {
             title: "Staff",
             icon: IdCard,
             items: [
-                {
-                    title: "Performa Staff",
-                    url: "/staff-performances",
-                },
+                // {
+                //     title: "Performa Staff",
+                //     url: "/staff-performances",
+                // },
                 {
                     title: "Daftar Staff",
                     url: "/staffs",
