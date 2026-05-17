@@ -26,11 +26,11 @@ export default function AuthCardLayout({
                     className="flex items-center gap-2 self-center font-medium"
                 >
                     <div className="flex h-9 items-center justify-center">
-                        <img
+                        {/* <img
                             src="assets/images/big-logo.png"
                             alt="Logo"
                             className="h-9"
-                        />
+                        /> */}
                     </div>
                 </Link>
 
