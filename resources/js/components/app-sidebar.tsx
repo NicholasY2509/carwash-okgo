@@ -151,6 +151,10 @@ const allNavItems = {
                     title: "Permission List",
                     url: "/permissions",
                 },
+                {
+                    title: "Pengaturan Whatsapp",
+                    url: "/settings/whatsapp",
+                }
             ],
         },
     ],

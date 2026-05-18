@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendWhatsAppReceiptJob;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Throwable;
@@ -189,6 +190,8 @@ class CarWashController extends Controller
 
             $sales_transaction->load(['customer', 'car', 'serviceRecords.product']);
 
+            SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
+
             return redirect()->back()->with('transaction', $sales_transaction);
         } catch (Throwable $th) {
             DB::rollBack();
@@ -266,6 +269,8 @@ class CarWashController extends Controller
 
             $sales_transaction->load(['customer', 'car', 'serviceRecords.product']);
 
+            SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
+
             return redirect()->back()->with('transaction', $sales_transaction);
         } catch (Throwable $th) {
             DB::rollBack();
@@ -313,6 +318,9 @@ class CarWashController extends Controller
             DB::commit();
 
             $return_transaction->load(['customer', 'car', 'serviceRecords.product']);
+
+            SendWhatsAppReceiptJob::dispatch($return_transaction)->afterResponse();
+
             return redirect()->back()->with('transaction', $return_transaction);
         } catch (Throwable $th) {
             DB::rollBack();
@@ -410,6 +418,8 @@ class CarWashController extends Controller
             DB::commit();
 
             $sales_transaction->load(['customer', 'car', 'serviceRecords.product']);
+
+            SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
 
             return redirect()->back()->with('transaction', $sales_transaction);
         } catch (Throwable $th) {

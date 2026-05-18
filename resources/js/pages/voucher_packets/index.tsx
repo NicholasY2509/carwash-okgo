@@ -166,7 +166,7 @@ export default function VoucherPacketIndex() {
             </div>
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent>
+                <SheetContent className="overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle>Tambah Packet Voucher</SheetTitle>
                         <SheetDescription>
@@ -212,8 +212,8 @@ export default function VoucherPacketIndex() {
                         ref={voucherPacketFormRef}
                         voucherTypes={voucherTypes}
                         voucherPacket={selectedVoucherPacket}
-                        onSuccess={() => setIsSheetOpen(false)}
-                        onCancel={() => setIsSheetOpen(false)}
+                        onSuccess={() => setIsEditSheetOpen(false)}
+                        onCancel={() => setIsEditSheetOpen(false)}
                     />
                     <SheetFooter>
                         <Button
@@ -228,7 +228,7 @@ export default function VoucherPacketIndex() {
                         <SheetClose asChild>
                             <Button
                                 variant={"secondary"}
-                                onClick={() => setIsSheetOpen(false)}
+                                onClick={() => setIsEditSheetOpen(false)}
                             >
                                 Cancel
                             </Button>

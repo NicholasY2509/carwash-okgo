@@ -223,7 +223,7 @@ export default function StaffIndex() {
                 </div>
             </div>
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent>
+                <SheetContent className="overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle>Tambah Staff</SheetTitle>
                         <SheetDescription>
@@ -254,7 +254,7 @@ export default function StaffIndex() {
 
             {/* Sheet untuk Edit Staff */}
             <Sheet open={isSheetEditOpen} onOpenChange={setIsSheetEditOpen}>
-                <SheetContent>
+                <SheetContent className="overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle>Edit Staff</SheetTitle>
                         <SheetDescription>
