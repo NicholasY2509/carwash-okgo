@@ -2,10 +2,8 @@ import AppLogoIcon from "./app-logo-icon";
 
 export default function AppLogo() {
     return (
-        <>
-            <div className="ml-1 grid flex-1 text-left text-sm font-bold">
-                Car Wash
-            </div>
-        </>
+        <div className="flex items-center justify-start w-full py-1">
+            <AppLogoIcon className="h-9 w-auto" />
+        </div>
     );
 }

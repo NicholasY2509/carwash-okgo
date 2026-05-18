@@ -39,7 +39,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
     return (
         <AuthLayout
-            title="Log In CarWash"
+            title="Log In OKGO"
             description="Masukkan Email dan Password Anda"
         >
             <Head title="Log in" />
