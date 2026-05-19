@@ -18,9 +18,11 @@ class SalesTransactionController extends Controller
             'customer:id,name',
             'car:id,plate_number',
             'staff:id,full_name',
-            'purchasedPackets.voucherPacket:id,name',
-            'serviceRecords.product:id,name',
+            'purchasedPackets.voucherPacket:id,name,price',
+            'serviceRecords.product:id,name,price',
             'serviceRecords.stall:id,name',
+            'serviceRecords.staff:id,full_name',
+            'items.item',
         ]);
 
         if (!empty($type)) {

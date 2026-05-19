@@ -15,6 +15,7 @@ class PurchasedPacket extends Model
         'voucher_packet_id',
         'customer_id',
         'car_id',
+        'price',
         'purchased_at',
         'expired_at',
         'status',

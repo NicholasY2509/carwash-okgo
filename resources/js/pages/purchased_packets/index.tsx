@@ -38,6 +38,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 // Removed receipt-formatter import
 import { toast } from "sonner";
 import { usePermission } from "@/hooks/use-permission";
+import { Pagination } from "@/components/ui/pagination";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -490,86 +491,65 @@ export default function PurchasedPacketIndex() {
                     />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between flex-row">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === 1}
-                                onClick={() => handlePageChange(pagination.current_page - 1)}
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-2 text-sm">
-                                Halaman {pagination.current_page} dari{" "}
-                                {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === pagination.last_page}
-                                onClick={() => handlePageChange(pagination.current_page + 1)}
-                            >
-                                Next
-                            </Button>
+                            <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="min-w-[60px] justify-between h-8"
+                                    >
+                                        {perPage}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {[5, 10, 20, 50, 100].map((size) => (
+                                        <DropdownMenuItem
+                                            key={size}
+                                            onSelect={() => handlePerPageChange(size)}
+                                        >
+                                            {size}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
-                        <div className="flex flex-row gap-2">
-                            <div className="flex items-center gap-2 justify-end">
-                                <span className="text-sm">Baris per halaman:</span>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="min-w-[60px] justify-between"
-                                        >
-                                            {perPage}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {[5, 10, 20, 50, 100].map((size) => (
-                                            <DropdownMenuItem
-                                                key={size}
-                                                onSelect={() => handlePerPageChange(size)}
-                                            >
-                                                {size}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Customer / Plat Nomor / No. Voucher..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 pr-10"
-                                    />
-                                    {searchQuery && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={clearSearch}
-                                            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Customer / Plat Nomor / No. Voucher..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 pr-8 h-8 text-sm"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearSearch}
+                                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
-                    <div>
-                        <DataTable
-                            columns={columns}
-                            data={pagination.data || []}
-                            renderSubComponent={PurchasedPacketDetails}
-                            getRowCanExpand={() => true}
+                    <DataTable
+                        columns={columns}
+                        data={pagination.data || []}
+                        renderSubComponent={PurchasedPacketDetails}
+                        getRowCanExpand={() => true}
+                    />
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            label="pembelian packet voucher"
                         />
-                    </div>
+                    )}
                 </div>
             </div>
         </AppLayout>

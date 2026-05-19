@@ -31,4 +31,8 @@ class Staff extends Model
     public function assignments(){
         return $this->hasMany(StallAssignment::class, 'staff_id');
     }
+
+    public function serviceRecords(){
+        return $this->hasMany(ServiceRecord::class, 'staff_id');
+    }
 }

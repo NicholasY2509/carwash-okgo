@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Pagination } from "@/components/ui/pagination";
 import {
     AlertDialogHeader,
     AlertDialogFooter,
@@ -158,81 +159,60 @@ export default function CarTypeIndex() {
                         <Plus className="h-4 w-4" /> Tambah Tipe Mobil
                     </Button>
                 </div>
-                <div className="flex flex-col gap-4 mt-2">
-                    <div className="flex justify-between flex-row items-center gap-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === 1}
-                                onClick={() => handlePageChange(pagination.current_page - 1)}
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-2 text-sm text-muted-foreground">
-                                Halaman {pagination.current_page} dari {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === pagination.last_page || pagination.last_page === 0}
-                                onClick={() => handlePageChange(pagination.current_page + 1)}
-                            >
-                                Next
-                            </Button>
-                        </div>
-                        <div className="flex items-center gap-2 justify-end flex-1 max-w-xl">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">Baris per halaman:</span>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="min-w-[60px] justify-between"
-                                        >
-                                            {perPage}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {[5, 10, 20, 50, 100].map((size) => (
-                                            <DropdownMenuItem
-                                                key={size}
-                                                onSelect={() => handlePerPageChange(size)}
-                                            >
-                                                {size}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <div className="relative flex-1 max-w-xs">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Cari tipe mobil..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 pr-10"
-                                />
-                                {searchQuery && (
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Baris per halaman:</span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        onClick={clearSearch}
-                                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                                        className="min-w-[60px] justify-between h-8"
                                     >
-                                        <X className="h-4 w-4" />
+                                        {perPage}
                                     </Button>
-                                )}
-                            </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {[5, 10, 20, 50, 100].map((size) => (
+                                        <DropdownMenuItem
+                                            key={size}
+                                            onSelect={() => handlePerPageChange(size)}
+                                        >
+                                            {size}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                        <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari tipe mobil..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 pr-8 h-8 text-sm"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearSearch}
+                                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
-                    <div>
-                        <DataTable columns={columns} data={pagination.data} />
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        Total: {pagination.total} data
-                    </div>
+                    <DataTable columns={columns} data={pagination.data} />
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            label="tipe mobil"
+                        />
+                    )}
                 </div>
             </div>
 

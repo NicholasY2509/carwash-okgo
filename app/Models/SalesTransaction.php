@@ -76,4 +76,9 @@ class SalesTransaction extends Model
     {
         return $this->hasOne(Voucher::class);
     }
+
+    public function items()
+    {
+        return $this->hasMany(SalesTransactionItem::class);
+    }
 }

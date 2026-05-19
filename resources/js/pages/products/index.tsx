@@ -17,11 +17,24 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface ProductSplitProp {
+    id: number;
+    product_id: number;
+    party_id: number;
+    percentage: number;
+    party?: {
+        id: number;
+        name: string;
+    };
+}
+
 interface ProductProp {
     id: number;
     name: string;
     description: string;
     price: number;
+    is_split_profits: boolean;
+    splits?: ProductSplitProp[];
     created_at: string;
 }
 
@@ -36,10 +49,12 @@ export default function ProductIndex() {
     const { props } = usePage<
         PageProps<{
             products: ProductProp[];
+            parties: { id: number; name: string }[];
             pagination: PaginationProp;
         }>
     >();
     const products = props.products;
+    const parties = props.parties || [];
     const pagination = props.pagination;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,6 +75,21 @@ export default function ProductIndex() {
                     currency: "IDR",
                     minimumFractionDigits: 0,
                 }).format(info.getValue() as number),
+        },
+        {
+            accessorKey: "is_split_profits",
+            header: "Bagi Hasil",
+            cell: ({ row }) => {
+                const active = row.original.is_split_profits;
+                if (!active) return <span className="text-muted-foreground text-xs italic">Tidak Aktif</span>;
+                const splitStr = row.original.splits?.map(s => `${s.party?.name}: ${Math.round(s.percentage)}%`).join(", ");
+                return (
+                    <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Aktif</span>
+                        {splitStr && <span className="text-[10px] text-muted-foreground max-w-[200px] truncate" title={splitStr}>{splitStr}</span>}
+                    </div>
+                );
+            }
         },
         {
             accessorKey: "actions",
@@ -133,6 +163,7 @@ export default function ProductIndex() {
             <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <ModalHeader title="Tambah Produk" />
                 <ProductForm
+                    parties={parties}
                     onSuccess={() => setIsModalOpen(false)}
                     onCancel={() => setIsModalOpen(false)}
                 />
@@ -145,6 +176,7 @@ export default function ProductIndex() {
                 {selectedProduct && (
                     <ProductForm
                         product={selectedProduct}
+                        parties={parties}
                         onSuccess={() => setIsEditModalOpen(false)}
                         onCancel={() => setIsEditModalOpen(false)}
                     />

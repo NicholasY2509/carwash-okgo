@@ -11,6 +11,7 @@ import { useState } from "react";
 import RoleForm from "./forms/role-form";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import {
     AlertDialogHeader,
     AlertDialogFooter,
@@ -150,71 +151,41 @@ export default function RoleIndex() {
                         Tambah Role
                     </Button>
                 </div>
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between flex-row">
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === 1}
-                                onClick={() =>
-                                    handlePageChange(
-                                        pagination.current_page - 1,
-                                    )
-                                }
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-2 text-sm">
-                                Halaman {pagination.current_page} dari{" "}
-                                {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                    pagination.current_page ===
-                                    pagination.last_page
-                                }
-                                onClick={() =>
-                                    handlePageChange(
-                                        pagination.current_page + 1,
-                                    )
-                                }
-                            >
-                                Next
-                            </Button>
-                        </div>
-                        <div className="flex items-center gap-2 justify-end">
-                            <span className="text-sm">Baris per halaman:</span>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="min-w-[60px] justify-between"
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-end flex-row items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="min-w-[60px] justify-between h-8"
+                                >
+                                    {perPage}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {[5, 10, 20, 50, 100].map((size) => (
+                                    <DropdownMenuItem
+                                        key={size}
+                                        onSelect={() =>
+                                            handlePerPageChange(size)
+                                        }
                                     >
-                                        {perPage}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    {[5, 10, 20, 50, 100].map((size) => (
-                                        <DropdownMenuItem
-                                            key={size}
-                                            onSelect={() =>
-                                                handlePerPageChange(size)
-                                            }
-                                        >
-                                            {size}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                        {size}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                    <div>
-                        <DataTable columns={columns} data={pagination.data} />
-                    </div>
+                    <DataTable columns={columns} data={pagination.data} />
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            label="roles"
+                        />
+                    )}
                 </div>
             </div>
 

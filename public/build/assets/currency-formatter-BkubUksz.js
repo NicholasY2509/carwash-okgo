@@ -1,0 +1,1 @@
+const a=new Map;function n(t="id-ID",e="IDR",o=0){const r=`${t}-${e}-${o}`;return a.has(r)||a.set(r,new Intl.NumberFormat(t,{style:"currency",currency:e,minimumFractionDigits:o})),a.get(r)}const m={format:t=>n("id-ID","IDR",0).format(t),formatWithDecimals:t=>n("id-ID","IDR",2).format(t),formatCustom:(t,e="id-ID",o="IDR",r=0)=>n(e,o,r).format(t)};export{m as c};

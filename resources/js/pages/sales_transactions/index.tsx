@@ -20,9 +20,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, X } from "lucide-react";
+import { Info, Search, X } from "lucide-react";
+import { Modal, ModalHeader } from "@/components/ui/modal";
+import { Pagination } from "@/components/ui/pagination";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -35,6 +37,8 @@ interface SalesTransactionRow {
     id: string;
     transaction_date: string;
     total_amount: number;
+    paid_amount?: number | null;
+    change_amount?: number | null;
     payment_method: string;
     transaction_type: string;
     staff: { full_name: string } | null;
@@ -42,7 +46,7 @@ interface SalesTransactionRow {
     car: { plate_number: string } | null;
     purchased_packets: Array<{
         id: string;
-        voucher_packet: { name: string } | null;
+        voucher_packet: { name: string; price?: number } | null;
         quantity: number;
         price: number;
         purchased_at: string;
@@ -50,8 +54,20 @@ interface SalesTransactionRow {
     }>;
     service_records: Array<{
         id: string;
-        product: { name: string } | null;
+        price?: number;
+        product: { name: string; price?: number } | null;
         stall: { name: string } | null;
+        staff: { full_name: string } | null;
+    }>;
+    items?: Array<{
+        id: number;
+        item_id: number;
+        quantity: number;
+        price: number;
+        subtotal: number;
+        item?: {
+            name: string;
+        } | null;
     }>;
 }
 
@@ -65,10 +81,21 @@ export default function SalesTransactionIndex() {
     const pagination = props.salesTransactions;
     const filters = props.filters;
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
-    const [selectedType, setSelectedType] = useState(filters.type || "");
+    const [selectedType, setSelectedType] = useState(filters.type || "all");
 
     const [searchQuery, setSearchQuery] = useState(filters.search || "");
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+    const [selectedTransaction, setSelectedTransaction] = useState<SalesTransactionRow | null>(null);
+
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     const columns: ColumnDef<SalesTransactionRow>[] = [
         {
@@ -127,7 +154,21 @@ export default function SalesTransactionIndex() {
         },
         {
             accessorKey: "staff.full_name",
-            header: "Petugas",
+            header: "Kasir",
+        },
+        {
+            id: "actions",
+            header: "Aksi",
+            cell: ({ row }) => (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTransaction(row.original)}
+                >
+                    <Info />
+                    Detail
+                </Button>
+            ),
         },
     ];
 
@@ -138,7 +179,7 @@ export default function SalesTransactionIndex() {
                 page,
                 per_page: perPage,
                 search: debouncedSearchQuery,
-                type: selectedType,
+                type: selectedType === "all" ? "" : selectedType,
             },
             { preserveState: true },
         );
@@ -152,7 +193,7 @@ export default function SalesTransactionIndex() {
                 page: 1,
                 per_page: newPerPage,
                 search: debouncedSearchQuery,
-                type: selectedType,
+                type: selectedType === "all" ? "" : selectedType,
             },
             { preserveState: true },
         );
@@ -166,7 +207,7 @@ export default function SalesTransactionIndex() {
                 page: 1,
                 per_page: perPage,
                 search: debouncedSearchQuery,
-                type,
+                type: type === "all" ? "" : type,
             },
             { preserveState: true },
         );
@@ -174,13 +215,14 @@ export default function SalesTransactionIndex() {
 
     // Handle search changes
     useEffect(() => {
+        if (!isMounted.current) return;
         router.get(
             route("sales-transactions.index"),
             {
                 page: 1,
                 per_page: perPage,
                 search: debouncedSearchQuery,
-                type: selectedType,
+                type: selectedType === "all" ? "" : selectedType,
             },
             { preserveState: true },
         );
@@ -201,123 +243,272 @@ export default function SalesTransactionIndex() {
                     />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between flex-row">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === 1}
-                                onClick={() =>
-                                    handlePageChange(
-                                        pagination.current_page - 1,
-                                    )
-                                }
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-2 text-sm">
-                                Halaman {pagination.current_page} dari{" "}
-                                {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                    pagination.current_page ===
-                                    pagination.last_page
-                                }
-                                onClick={() =>
-                                    handlePageChange(
-                                        pagination.current_page + 1,
-                                    )
-                                }
-                            >
-                                Next
-                            </Button>
-                        </div>
-                        <div className="flex flex-row gap-2">
-                            <div className="flex items-center gap-2 justify-end">
-                                <span className="text-sm">
-                                    Baris per halaman:
-                                </span>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="min-w-[60px] justify-between"
+                            <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="min-w-[60px] justify-between h-8"
+                                    >
+                                        {perPage}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {[5, 10, 20, 50, 100].map((size) => (
+                                        <DropdownMenuItem
+                                            key={size}
+                                            onSelect={() =>
+                                                handlePerPageChange(size)
+                                            }
                                         >
-                                            {perPage}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {[5, 10, 20, 50, 100].map((size) => (
-                                            <DropdownMenuItem
-                                                key={size}
-                                                onSelect={() =>
-                                                    handlePerPageChange(size)
-                                                }
-                                            >
-                                                {size}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            {/* Type Filter */}
-                            <div className="flex items-center gap-2">
-                                <Select
-                                    value={selectedType}
-                                    onValueChange={handleTypeChange}
+                                            {size}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                        {/* Type Filter */}
+                        <div className="flex items-center gap-2">
+                            <Select
+                                value={selectedType}
+                                onValueChange={handleTypeChange}
+                            >
+                                <SelectTrigger className="w-[180px] h-8 text-sm">
+                                    <SelectValue placeholder="Semua Tipe" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        Semua Tipe
+                                    </SelectItem>
+                                    <SelectItem value="car_wash">
+                                        Cuci Mobil
+                                    </SelectItem>
+                                    <SelectItem value="voucher">
+                                        Pembelian Voucher
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {/* Search Bar */}
+                        <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Customer / Plat Nomor..."
+                                value={searchQuery}
+                                onChange={(e) =>
+                                    setSearchQuery(e.target.value)
+                                }
+                                className="pl-9 pr-8 h-8 text-sm"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearSearch}
+                                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
                                 >
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Semua Tipe" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="">
-                                            Semua Tipe
-                                        </SelectItem>
-                                        <SelectItem value="car_wash">
-                                            Cuci Mobil
-                                        </SelectItem>
-                                        <SelectItem value="voucher">
-                                            Pembelian Voucher
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {/* Search Bar */}
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Customer / Plat Nomor..."
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                        className="pl-10 pr-10"
-                                    />
-                                    {searchQuery && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={clearSearch}
-                                            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
-                    <div>
-                        <DataTable columns={columns} data={pagination.data} />
-                    </div>
+                    <DataTable columns={columns} data={pagination.data} />
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            label="transaksi"
+                        />
+                    )}
                 </div>
             </div>
+
+            {selectedTransaction && (
+                <Modal
+                    open={!!selectedTransaction}
+                    onClose={() => setSelectedTransaction(null)}
+                    className="max-w-3xl p-6"
+                >
+                    <ModalHeader title={`Detail Transaksi #${selectedTransaction.id}`} />
+
+                    <div className="mt-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                        {/* Transaction Metadata Card */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border">
+                            <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground font-semibold uppercase">Detail Transaksi</span>
+                                <div className="text-sm font-medium">Tipe: <Badge variant="outline" className="ml-1">{selectedTransaction.transaction_type}</Badge></div>
+                                <div className="text-sm">Tanggal: <span className="font-semibold">{new Intl.DateTimeFormat("id-ID", {
+                                    day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                                }).format(new Date(selectedTransaction.transaction_date))}</span></div>
+                                <div className="text-sm">Metode Pembayaran: <span className="font-semibold">{selectedTransaction.payment_method || "-"}</span></div>
+                            </div>
+                            <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground font-semibold uppercase">Customer & Kendaraan</span>
+                                <div className="text-sm">Nama: <span className="font-semibold">{selectedTransaction.customer?.name || "Walk-In Customer"}</span></div>
+                                <div className="text-sm">Plat Nomor: <span className="font-semibold">{selectedTransaction.car?.plate_number || "-"}</span></div>
+                                <div className="text-sm">Kasir: <span className="font-semibold">{selectedTransaction.staff?.full_name || "-"}</span></div>
+                            </div>
+                        </div>
+
+                        {/* Service & Product Details */}
+                        {selectedTransaction.service_records && selectedTransaction.service_records.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Detail Layanan Cuci</h3>
+                                <div className="border rounded-xl overflow-hidden">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-muted text-muted-foreground uppercase text-[10px] font-bold">
+                                            <tr>
+                                                <th className="px-4 py-2">Layanan</th>
+                                                <th className="px-4 py-2">Stall</th>
+                                                <th className="px-4 py-2">Pencuci</th>
+                                                <th className="px-4 py-2 text-right">Harga</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {selectedTransaction.service_records.map((srv: any) => (
+                                                <tr key={srv.id} className="hover:bg-muted/10">
+                                                    <td className="px-4 py-3 font-medium">{srv.product?.name || "-"}</td>
+                                                    <td className="px-4 py-3">{srv.stall?.name || "-"}</td>
+                                                    <td className="px-4 py-3">{srv.staff?.full_name || "-"}</td>
+                                                    <td className="px-4 py-3 text-right font-semibold">
+                                                        {new Intl.NumberFormat("id-ID", {
+                                                            style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                                        }).format(srv.price ?? srv.product?.price ?? 0)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Purchased Packets Details */}
+                        {selectedTransaction.purchased_packets && selectedTransaction.purchased_packets.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Paket Voucher yang Dibeli</h3>
+                                <div className="border rounded-xl overflow-hidden">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-muted text-muted-foreground uppercase text-[10px] font-bold">
+                                            <tr>
+                                                <th className="px-4 py-2">Nama Paket</th>
+                                                <th className="px-4 py-2">Qty</th>
+                                                <th className="px-4 py-2 text-right">Harga</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {selectedTransaction.purchased_packets.map((pkt: any) => (
+                                                <tr key={pkt.id} className="hover:bg-muted/10">
+                                                    <td className="px-4 py-3 font-medium">{pkt.voucher_packet?.name || "-"}</td>
+                                                    <td className="px-4 py-3">{pkt.quantity || 1}</td>
+                                                    <td className="px-4 py-3 text-right font-semibold">
+                                                        {new Intl.NumberFormat("id-ID", {
+                                                            style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                                        }).format(pkt.price ?? pkt.voucher_packet?.price ?? 0)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Sold Items Detail Block */}
+                        <div className="space-y-2">
+                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Barang / Item Terjual (Pelengkap)</h3>
+                            {selectedTransaction.items && selectedTransaction.items.length > 0 ? (
+                                <div className="border rounded-xl overflow-hidden">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-muted text-muted-foreground uppercase text-[10px] font-bold">
+                                            <tr>
+                                                <th className="px-4 py-2">Nama Barang</th>
+                                                <th className="px-4 py-2">Qty</th>
+                                                <th className="px-4 py-2">Harga Satuan</th>
+                                                <th className="px-4 py-2 text-right">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {selectedTransaction.items.map((item: any) => {
+                                                const isIncluded = Number(item.price) === 0;
+                                                return (
+                                                    <tr key={item.id} className="hover:bg-muted/10">
+                                                        <td className="px-4 py-3 font-medium">
+                                                            {item.item?.name || `Item ID: ${item.item_id}`}
+                                                            {isIncluded && (
+                                                                <Badge variant="secondary" className="ml-2 text-[9px] font-bold text-blue-600 bg-blue-50">
+                                                                    INCLUDED (FREE)
+                                                                </Badge>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3">{item.quantity}</td>
+                                                        <td className="px-4 py-3 font-medium">
+                                                            {isIncluded ? "Rp 0" : new Intl.NumberFormat("id-ID", {
+                                                                style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                                            }).format(item.price)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-bold text-slate-800">
+                                                            {isIncluded ? "Rp 0" : new Intl.NumberFormat("id-ID", {
+                                                                style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                                            }).format(item.subtotal)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-muted-foreground bg-muted/10 p-4 rounded-xl text-center border border-dashed">
+                                    Tidak ada item pelengkap yang terjual dengan transaksi ini.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Grand Total Area */}
+                        <div className="border-t pt-4 flex flex-col items-end space-y-1.5">
+                            <div className="flex justify-between w-full max-w-xs text-sm">
+                                <span className="text-muted-foreground">Grand Total:</span>
+                                <span className="font-extrabold text-lg text-blue-600">
+                                    {new Intl.NumberFormat("id-ID", {
+                                        style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                    }).format(selectedTransaction.total_amount)}
+                                </span>
+                            </div>
+                            {selectedTransaction.paid_amount !== null && selectedTransaction.paid_amount !== undefined && (
+                                <div className="flex justify-between w-full max-w-xs text-sm">
+                                    <span className="text-muted-foreground">Nominal Bayar:</span>
+                                    <span className="font-medium text-slate-700">
+                                        {new Intl.NumberFormat("id-ID", {
+                                            style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                        }).format(selectedTransaction.paid_amount)}
+                                    </span>
+                                </div>
+                            )}
+                            {selectedTransaction.change_amount !== null && selectedTransaction.change_amount !== undefined && (
+                                <div className="flex justify-between w-full max-w-xs text-sm">
+                                    <span className="text-muted-foreground">Kembalian:</span>
+                                    <span className="font-semibold text-emerald-600">
+                                        {new Intl.NumberFormat("id-ID", {
+                                            style: "currency", currency: "IDR", minimumFractionDigits: 0
+                                        }).format(Math.max(0, selectedTransaction.change_amount))}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end">
+                        <Button onClick={() => setSelectedTransaction(null)} className="px-6 bg-slate-900 text-white hover:bg-slate-800">
+                            Tutup
+                        </Button>
+                    </div>
+                </Modal>
+            )}
         </AppLayout>
     );
 }

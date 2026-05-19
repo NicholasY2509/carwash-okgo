@@ -7,6 +7,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PurchasedPacketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesTransactionController;
@@ -19,8 +20,16 @@ use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\VoucherPacketController;
 use App\Http\Controllers\VoucherTypeController;
 use App\Http\Controllers\WorkPositionController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\Reports\CarWashRevenueReportController;
+use App\Http\Controllers\Reports\VoucherSalesReportController;
+use App\Http\Controllers\Reports\StockReportController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+
 
 Route::get('/', function () {
     return to_route('dashboard');
@@ -61,10 +70,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'customers'         => CustomerController::class,
         'cars'              => CarController::class,
         'products'          => ProductController::class,
+        'parties'           => PartyController::class,
         'roles'             => RoleController::class,
         'permissions'       => PermissionController::class,
         'sales-transactions'=> SalesTransactionController::class,
         'car-types'         => CarTypeController::class,
+        'settings/incentive-tiers' => \App\Http\Controllers\Settings\IncentiveTierController::class,
+        'items'             => ItemController::class,
+        'purchases'         => PurchaseController::class,
+        'stock-adjustments' => StockAdjustmentController::class,
+        'suppliers'         => SupplierController::class,
     ]);
 
     Route::controller(StallAssignmentController::class)->group(function () {
@@ -79,6 +94,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::controller(StaffPerformanceController::class)->group(function () {
         Route::get('staff-performances', 'index')->name('staff-performances.index');
+    });
+
+    Route::controller(\App\Http\Controllers\StaffIncentiveController::class)->group(function () {
+        Route::get('staff-incentives', 'index')->name('staff-incentives.index');
+    });
+
+    // Report Routes
+    Route::prefix('reports')->group(function () {
+        Route::get('car-wash-revenue', [CarWashRevenueReportController::class, 'index'])->name('reports.car-wash-revenue');
+        Route::get('voucher-sales', [VoucherSalesReportController::class, 'index'])->name('reports.voucher-sales');
+        Route::get('stock', [StockReportController::class, 'index'])->name('reports.stock');
+        Route::get('split-profit', [\App\Http\Controllers\Reports\SplitProfitReportController::class, 'index'])->name('reports.split-profit');
     });
 });
 

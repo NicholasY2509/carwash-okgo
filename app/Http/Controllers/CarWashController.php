@@ -35,7 +35,10 @@ class CarWashController extends Controller
             'car:id,plate_number,customer_id',
             'car.customer:id,name',
             'staff:id,full_name',
+            'serviceRecords.product:id,name,price',
             'serviceRecords.stall:id,name',
+            'serviceRecords.staff:id,full_name',
+            'items.item',
             'voucher:id,serial_number,sales_transaction_id'
         ])
             ->whereIn('transaction_type', $carWashTransactionTypes);
@@ -84,6 +87,42 @@ class CarWashController extends Controller
                 'voucher' => $tx->voucher ? [
                     'serial_number' => $tx->voucher->serial_number
                 ] : null,
+                'service_records' => $tx->serviceRecords->map(function ($sr) {
+                    return [
+                        'id' => $sr->id,
+                        'price' => $sr->price,
+                        'product' => $sr->product ? [
+                            'id' => $sr->product->id,
+                            'name' => $sr->product->name,
+                            'price' => $sr->product->price,
+                        ] : null,
+                        'stall' => $sr->stall ? [
+                            'id' => $sr->stall->id,
+                            'name' => $sr->stall->name,
+                        ] : null,
+                        'staff' => $sr->staff ? [
+                            'id' => $sr->staff->id,
+                            'full_name' => $sr->staff->full_name,
+                        ] : null,
+                    ];
+                }),
+                'items' => $tx->items->map(function ($ti) {
+                    return [
+                        'id' => $ti->id,
+                        'item_id' => $ti->item_id,
+                        'item' => $ti->item ? [
+                            'id' => $ti->item->id,
+                            'name' => $ti->item->name,
+                            'sku' => $ti->item->sku,
+                        ] : null,
+                        'quantity' => $ti->quantity,
+                        'price' => $ti->price,
+                        'subtotal' => $ti->subtotal,
+                    ];
+                }),
+                'paid_amount' => $tx->paid_amount,
+                'change_amount' => $tx->change_amount,
+                'transaction_type' => $tx->transaction_type,
             ];
         });
         $paginated = $salesTransactions->toArray();
@@ -101,6 +140,9 @@ class CarWashController extends Controller
     {
         // Only load essential data to prevent large headers
         $products = Product::select(['id', 'name', 'price'])
+            ->with(['items' => function ($query) {
+                $query->select('items.id', 'items.name', 'items.stock');
+            }])
             ->orderBy('name')
             ->limit(50) // Limit to 50 products max
             ->get();
@@ -118,11 +160,16 @@ class CarWashController extends Controller
             ->orderBy('full_name')
             ->get();
 
+        $items = \App\Models\Item::select(['id', 'name', 'stock', 'price'])
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('car_wash/create', [
             'products' => $products,
             'stalls' => $stalls,
             'car_types' => $carTypes,
-            'staffs' => $staffs
+            'staffs' => $staffs,
+            'items' => $items,
         ]);
     }
 
@@ -166,29 +213,60 @@ class CarWashController extends Controller
                 ]);
             }
 
+            // Calculate extra items amount
+            $extraAmount = 0;
+            $selectedItemIds = $request->input('selected_items', []);
+            if (!is_array($selectedItemIds)) {
+                $selectedItemIds = [];
+            }
+            $boundItemIds = $product->items->pluck('id')->toArray();
+            $itemsToRecord = [];
+            foreach ($selectedItemIds as $itemId) {
+                $item = \App\Models\Item::find($itemId);
+                if ($item) {
+                    $isBound = in_array($item->id, $boundItemIds);
+                    $price = $isBound ? 0 : $item->price;
+                    $extraAmount += $price;
+                    $itemsToRecord[] = [
+                        'item_id' => $item->id,
+                        'quantity' => 1,
+                        'price' => $price,
+                        'subtotal' => $price,
+                    ];
+                }
+            }
+
+            $total_amount = $product->price + $extraAmount;
+
             $sales_transaction = SalesTransaction::create([
                 'transaction_date' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                 'customer_id' => $customer->id,
                 'car_id' => $car->id,
                 'staff_id' => Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1),
-                'total_amount' => $product->price,
+                'total_amount' => $total_amount,
                 'payment_method' => $request->payment_method,
-                'paid_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar : $product->price) : null,
-                'change_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar - $product->price : 0) : null,
+                'paid_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar : $total_amount) : null,
+                'change_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar - $total_amount : 0) : null,
                 'transaction_type' => 'Cuci Mobil',
             ]);
+
+            // Save items to transaction
+            foreach ($itemsToRecord as $itemData) {
+                $sales_transaction->items()->create($itemData);
+            }
 
             $services_records = $sales_transaction->serviceRecords()->create([
                 'service_date' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                 'car_id' => $car->id,
                 'product_id' => $product->id,
+                'price' => $product->price,
                 'staff_id' => $request->staff_id ?: (Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1)),
                 'stall_id' => $request->stall_id ?: (\App\Models\Stall::value('id') ?: 1),
             ]);
 
             DB::commit();
 
-            $sales_transaction->load(['customer', 'car', 'serviceRecords.product']);
+            $sales_transaction->load(['customer', 'car', 'serviceRecords.product', 'items.item']);
 
             SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
 
@@ -240,20 +318,49 @@ class CarWashController extends Controller
                 ]);
             }
 
+            // Calculate extra items amount
+            $extraAmount = 0;
+            $selectedItemIds = $request->input('selected_items', []);
+            if (!is_array($selectedItemIds)) {
+                $selectedItemIds = [];
+            }
+            $boundItemIds = $product->items->pluck('id')->toArray();
+            $itemsToRecord = [];
+            foreach ($selectedItemIds as $itemId) {
+                $item = \App\Models\Item::find($itemId);
+                if ($item) {
+                    $isBound = in_array($item->id, $boundItemIds);
+                    $price = $isBound ? 0 : $item->price;
+                    $extraAmount += $price;
+                    $itemsToRecord[] = [
+                        'item_id' => $item->id,
+                        'quantity' => 1,
+                        'price' => $price,
+                        'subtotal' => $price,
+                    ];
+                }
+            }
+
             $sales_transaction = SalesTransaction::create([
                 'transaction_date' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                 'customer_id' => $customer->id,
                 'car_id' => $car->id,
                 'staff_id' => Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1),
-                'total_amount' => 0,
+                'total_amount' => $extraAmount,
                 'payment_method' => 'Voucher',
                 'transaction_type' => 'Cuci Mobil',
             ]);
+
+            // Save items to transaction
+            foreach ($itemsToRecord as $itemData) {
+                $sales_transaction->items()->create($itemData);
+            }
 
             $services_record = $sales_transaction->serviceRecords()->create([
                 'service_date' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                 'car_id' => $car->id,
                 'product_id' => $product->id,
+                'price' => $product->price,
                 'staff_id' => $request->staff_id ?: (Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1)),
                 'stall_id' => $request->stall_id ?: (\App\Models\Stall::value('id') ?: 1),
             ]);
@@ -267,7 +374,7 @@ class CarWashController extends Controller
 
             DB::commit();
 
-            $sales_transaction->load(['customer', 'car', 'serviceRecords.product']);
+            $sales_transaction->load(['customer', 'car', 'serviceRecords.product', 'items.item']);
 
             SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
 
@@ -311,6 +418,7 @@ class CarWashController extends Controller
                 'service_date' => $return_transaction->transaction_date,
                 'car_id' => $original_transaction->car_id,
                 'product_id' => $original_service_record->product_id, // Gunakan produk yang sama dengan cuci sebelumnya
+                'price' => 0,
                 'staff_id' => $request->staff_id ?: (Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1)),
                 'stall_id' => $request->stall_id ?: (\App\Models\Stall::value('id') ?: 1),
             ]);
@@ -411,6 +519,7 @@ class CarWashController extends Controller
                 'service_date' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                 'car_id' => $carId,
                 'product_id' => $product->id,
+                'price' => 0,
                 'staff_id' => $request->staff_id ?: (Auth::user()->staff?->id ?: (\App\Models\Staff::value('id') ?: 1)),
                 'stall_id' => $request->stall_id ?: (\App\Models\Stall::value('id') ?: 1),
             ]);

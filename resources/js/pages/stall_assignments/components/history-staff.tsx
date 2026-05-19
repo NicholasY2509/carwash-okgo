@@ -11,6 +11,7 @@ import { Paginated } from "@/types";
 import { Link } from "@inertiajs/react";
 import { Clock, History as HistoryIcon } from "lucide-react";
 import HistoryFilterControls from "./history-filter-controls";
+import { Pagination } from "@/components/ui/pagination";
 interface Staff {
     id: number;
     full_name: string;
@@ -119,25 +120,13 @@ export default function HistoryStaffCard({
                 )}
             </CardContent>
 
-            {assignmentHistory.total > 0 && (
-                <div className="text-muted-foreground flex items-center justify-between border-t p-4 text-sm">
-                    <span>
-                        Halaman {assignmentHistory.current_page} dari{" "}
-                        {assignmentHistory.last_page}
-                    </span>
-                    <div className="flex items-center gap-1">
-                        {assignmentHistory.links.map((link, index) => (
-                            <Link
-                                key={index}
-                                href={link.url || "#"}
-                                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${link.active ? "bg-primary text-primary-foreground" : "hover:bg-accent"} ${!link.url ? "text-muted-foreground cursor-not-allowed" : ""}`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                as="button"
-                                disabled={!link.url}
-                            />
-                        ))}
-                    </div>
-                </div>
+            {assignmentHistory && (
+                <Pagination
+                    pagination={assignmentHistory}
+                    label="penugasan"
+                    className="px-6 pb-6 pt-4 border-t mt-0"
+                    showInfo={true}
+                />
             )}
         </Card>
     );

@@ -49,10 +49,18 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface ItemProp {
+    id: number;
+    name: string;
+    stock: number;
+    price: number;
+}
+
 interface Product {
     id: number;
     name: string;
     price: number;
+    items?: ItemProp[];
 }
 
 interface Stall {
@@ -77,6 +85,7 @@ export default function CarWashCreate() {
             stalls: Stall[];
             car_types: { id: number; name: string }[];
             staffs: { id: number; full_name: string }[];
+            items: ItemProp[];
         }>>();
     const products = props.products || [];
     const stalls = props.stalls || [];
@@ -101,8 +110,15 @@ export default function CarWashCreate() {
     const [nominalBayar, setNominalBayar] = useState("");
     const [footerError, setFooterError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
 
-    const totalHarga = selectedProduct?.price || 0;
+    const servicePrice = Number(selectedProduct?.price || 0);
+    const boundItemIds = selectedProduct?.items?.map(i => i.id) || [];
+    const itemsPrice = (props.items || [])
+        .filter((item: ItemProp) => selectedItemIds.includes(item.id) && !boundItemIds.includes(item.id))
+        .reduce((sum: number, item: ItemProp) => sum + Number(item.price || 0), 0);
+
+    const totalHarga = servicePrice + itemsPrice;
     const nilaiBayar = parseFloat(nominalBayar) || 0;
     const kembalian = nilaiBayar > totalHarga ? nilaiBayar - totalHarga : 0;
 
@@ -145,8 +161,18 @@ export default function CarWashCreate() {
             setFooterError(null);
             setPaymentMethod("");
             setIsSubmitting(false);
+            setSelectedItemIds([]);
         }
     }, [isSheetOpen, products, activeForm, stalls]);
+
+    useEffect(() => {
+        if (selectedProduct && selectedProduct.items) {
+            const defaultItemIds = selectedProduct.items.map(item => item.id);
+            setSelectedItemIds(defaultItemIds);
+        } else {
+            setSelectedItemIds([]);
+        }
+    }, [selectedProduct]);
 
     useEffect(() => {
         if (paymentMethod !== "Cash") {
@@ -162,6 +188,10 @@ export default function CarWashCreate() {
                         ref={formRef as React.Ref<CreateCashPurchaseHandle>}
                         onSuccess={() => setIsSheetOpen(false)}
                         carTypes={props.car_types || []}
+                        items={props.items || []}
+                        selectedProduct={selectedProduct}
+                        selectedItems={selectedItemIds}
+                        setSelectedItems={setSelectedItemIds}
                     />
                 );
             case "Voucher":
@@ -169,6 +199,10 @@ export default function CarWashCreate() {
                     <CreateVoucherPurchase
                         ref={formRef as any}
                         onSuccess={() => setIsSheetOpen(false)}
+                        items={props.items || []}
+                        selectedProduct={selectedProduct}
+                        selectedItems={selectedItemIds}
+                        setSelectedItems={setSelectedItemIds}
                     />
                 );
             case "Return":
@@ -226,7 +260,7 @@ export default function CarWashCreate() {
                                                     <SelectValue placeholder="Pilih produk..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {products.map((product) => (
+                                                    {products.map((product: Product) => (
                                                         <SelectItem
                                                             key={product.id}
                                                             value={String(product.id)}
@@ -248,7 +282,7 @@ export default function CarWashCreate() {
                                                     <SelectValue placeholder="Pilih staff washer..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {staffs.map((st) => (
+                                                    {staffs.map((st: { id: number; full_name: string }) => (
                                                         <SelectItem
                                                             key={st.id}
                                                             value={String(st.id)}
@@ -295,6 +329,8 @@ export default function CarWashCreate() {
                             </div>
                             <TransactionFooter
                                 totalHarga={totalHarga}
+                                servicePrice={servicePrice}
+                                itemsPrice={itemsPrice}
                                 onFinalSubmit={handleFinalSubmit}
                                 onClose={() => setIsSheetOpen(false)}
                                 footerError={footerError}

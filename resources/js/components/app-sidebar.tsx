@@ -14,6 +14,7 @@ import { type NavItem } from "@/types";
 import { Link } from "@inertiajs/react";
 import {
     Box,
+    Package,
     Car,
     Home,
     IdCard,
@@ -22,6 +23,7 @@ import {
     Ticket,
     User2,
     Wrench,
+    FileBarChart2,
 } from "lucide-react";
 import AppLogo from "./app-logo";
 import { url } from "inspector";
@@ -50,8 +52,39 @@ const allNavItems = {
         },
         {
             title: "Produk",
-            url: "/products",
             icon: Box,
+            items: [
+                {
+                    title: "Daftar Produk",
+                    url: "/products",
+                },
+                {
+                    title: "Pihak Bagi Hasil",
+                    url: "/parties",
+                },
+            ],
+        },
+        {
+            title: "Stok & Barang",
+            icon: Package,
+            items: [
+                {
+                    title: "Daftar Barang",
+                    url: "/items",
+                },
+                {
+                    title: "Daftar Supplier",
+                    url: "/suppliers",
+                },
+                {
+                    title: "Pembelian Stok",
+                    url: "/purchases",
+                },
+                {
+                    title: "Pergerakan Stok",
+                    url: "/stock-adjustments",
+                },
+            ],
         },
         {
             title: "Transaksi",
@@ -64,6 +97,10 @@ const allNavItems = {
                 {
                     title: "Pencucian Mobil",
                     url: "/car-washes",
+                },
+                {
+                    title: "Riwayat Penjualan",
+                    url: "/sales-transactions",
                 },
             ],
         },
@@ -103,10 +140,10 @@ const allNavItems = {
             title: "Staff",
             icon: IdCard,
             items: [
-                // {
-                //     title: "Performa Staff",
-                //     url: "/staff-performances",
-                // },
+                {
+                    title: "Insentif Staff",
+                    url: "/staff-incentives",
+                },
                 {
                     title: "Daftar Staff",
                     url: "/staffs",
@@ -114,6 +151,28 @@ const allNavItems = {
                 {
                     title: "Posisi Kerja",
                     url: "/work-positions",
+                },
+            ],
+        },
+        {
+            title: "Laporan",
+            icon: FileBarChart2,
+            items: [
+                {
+                    title: "Omset Cuci Mobil",
+                    url: "/reports/car-wash-revenue",
+                },
+                {
+                    title: "Penjualan Voucher",
+                    url: "/reports/voucher-sales",
+                },
+                {
+                    title: "Stok Barang",
+                    url: "/reports/stock",
+                },
+                {
+                    title: "Bagi Hasil",
+                    url: "/reports/split-profit",
                 },
             ],
         },
@@ -150,6 +209,10 @@ const allNavItems = {
                 {
                     title: "Permission List",
                     url: "/permissions",
+                },
+                {
+                    title: "Master Insentif",
+                    url: "/settings/incentive-tiers",
                 },
                 {
                     title: "Pengaturan Whatsapp",

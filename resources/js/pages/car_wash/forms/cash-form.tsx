@@ -1,6 +1,8 @@
 import Heading from "@/components/heading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
     Select,
     SelectItem,
@@ -23,8 +25,11 @@ import Swal from "sweetalert2";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CustomerSearch } from "@/pages/purchased_packets/forms/customer-search";
 import { useTransactionHandler } from "@/hooks/use-transaction-handler";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, ShoppingCart } from "lucide-react";
 import CarPlateSearch from "./car-plate-search";
+import { Modal, ModalHeader } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { currencyFormatter } from "@/lib/currency-formatter";
 
 interface car {
     id: string;
@@ -52,9 +57,19 @@ export interface CreateCashPurchaseHandle {
     submit: (footerData: FooterData) => void;
     canSubmit: () => boolean;
 }
+interface ItemProp {
+    id: number;
+    name: string;
+    stock: number;
+    price: number;
+}
 interface CreateCashPurchaseProps {
     onSuccess: () => void;
     carTypes: { id: number; name: string }[];
+    items: ItemProp[];
+    selectedProduct: { id: number; name: string; items?: ItemProp[] } | null;
+    selectedItems: number[];
+    setSelectedItems: (ids: number[]) => void;
 }
 
 interface SearchState {
@@ -120,7 +135,7 @@ const useSearch = (endpoint: string, queryKey: string, minLength: number = 2) =>
 const CreateCashPurchase = forwardRef<
     CreateCashPurchaseHandle,
     CreateCashPurchaseProps
->(({ onSuccess, carTypes }, ref) => {
+>(({ onSuccess, carTypes, items, selectedProduct, selectedItems, setSelectedItems }, ref) => {
     type FormData = {
         customer_id: string | null;
         car_id: string | null;
@@ -135,6 +150,7 @@ const CreateCashPurchase = forwardRef<
         car_photo: File | null;
         stall_id: number | null;
         product_id: string | null;
+        selected_items: number[];
     };
 
     const { data, setData, post, processing, errors, reset } =
@@ -152,13 +168,20 @@ const CreateCashPurchase = forwardRef<
             car_photo: null,
             stall_id: null,
             product_id: null,
+            selected_items: [],
         });
+
+    // Sync whenever selectedItems changes (managed by parent)
+    useEffect(() => {
+        setData("selected_items", selectedItems);
+    }, [selectedItems]);
 
     // Optimized state management
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isNewCar, setIsNewCar] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
     const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
 
     // Reusable search hooks
     const customerSearch = useSearch("/api/customers/search", "query");
@@ -527,6 +550,109 @@ const CreateCashPurchase = forwardRef<
                             </>
                         )}
                     </div>
+
+                    {/* Inventory Items Selection Checklist */}
+                    {items && items.length > 0 && (
+                        <div className="space-y-3 border p-4 rounded-lg bg-muted/20 mt-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div>
+                                    <Label className="text-sm font-semibold text-foreground">Barang / Item Pelengkap (Tissue, Parfum, dll)</Label>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        Pilih barang yang diberikan ke customer.
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsItemModalOpen(true)}
+                                    className="flex items-center gap-2 border-blue-500/30 text-blue-600 hover:text-blue-700 hover:bg-blue-50/50"
+                                >
+                                    <ShoppingCart className="w-4 h-4" />
+                                    Kelola Barang ({selectedItems.length} Terpilih)
+                                </Button>
+                            </div>
+
+                            {selectedItems.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-dashed">
+                                    {items.filter(item => selectedItems.includes(item.id)).map(item => {
+                                        const isBound = selectedProduct?.items?.some(i => i.id === item.id) || false;
+                                        return (
+                                            <Badge key={item.id} variant="secondary" className="flex items-center gap-1.5 py-1">
+                                                {item.name}
+                                                {isBound ? (
+                                                    <span className="text-[9px] text-blue-500 font-bold uppercase">(Bawaan)</span>
+                                                ) : (
+                                                    <span className="text-[9px] text-emerald-600 font-bold">
+                                                        (+{currencyFormatter.format(item.price || 0)})
+                                                    </span>
+                                                )}
+                                            </Badge>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Modal for selecting items */}
+                            <Modal open={isItemModalOpen} onClose={() => setIsItemModalOpen(false)} className="max-w-2xl p-6">
+                                <ModalHeader title="Pilih Barang / Item Pelengkap" />
+                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 mt-4">
+                                    <p className="text-xs text-muted-foreground">
+                                        Centang barang-barang tambahan di bawah. Barang bawaan (included) tercentang secara default.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {items.map((item) => {
+                                            const isChecked = selectedItems.includes(item.id);
+                                            const isBound = selectedProduct?.items?.some(i => i.id === item.id) || false;
+
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${isChecked
+                                                        ? "border-blue-200 bg-blue-50/30"
+                                                        : "border-muted bg-card hover:bg-muted/30"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Checkbox
+                                                            id={`item-modal-${item.id}`}
+                                                            checked={isChecked}
+                                                            onCheckedChange={(checked) => {
+                                                                if (checked) {
+                                                                    setSelectedItems([...selectedItems, item.id]);
+                                                                } else {
+                                                                    setSelectedItems(selectedItems.filter(id => id !== item.id));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <Label htmlFor={`item-modal-${item.id}`} className="cursor-pointer font-medium text-sm flex flex-col">
+                                                            <span>{item.name}</span>
+                                                            {isBound ? (
+                                                                <span className="text-[10px] text-blue-500 font-semibold uppercase tracking-wider mt-0.5">
+                                                                    Bawaan Layanan (Rp 0)
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                                                                    {currencyFormatter.format(item.price || 0)}
+                                                                </span>
+                                                            )}
+                                                        </Label>
+                                                    </div>
+                                                    <Badge variant={item.stock === 0 ? "destructive" : "outline"} className="text-xs shrink-0">
+                                                        Stok: {item.stock}
+                                                    </Badge>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end">
+                                    <Button type="button" onClick={() => setIsItemModalOpen(false)}>
+                                        Selesai
+                                    </Button>
+                                </div>
+                            </Modal>
+                        </div>
+                    )}
                 </div>
 
                 {/* {summaryData && (

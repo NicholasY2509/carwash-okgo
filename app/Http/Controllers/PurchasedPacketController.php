@@ -29,7 +29,7 @@ class PurchasedPacketController extends Controller
             'customer:id,name',
             'car:id,plate_number',
             'staff:id,full_name',
-            'purchasedPackets.voucherPacket:id,name',
+            'purchasedPackets.voucherPacket:id,name,price',
             'purchasedPackets.customer:id,name',
             'purchasedPackets.car:id,plate_number',
             'purchasedPackets.vouchers',
@@ -129,6 +129,7 @@ class PurchasedPacketController extends Controller
                     'customer_id' => $customer->id,
                     'car_id' => $car?->id,
                     'voucher_packet_id' => $voucher_packet->id,
+                    'price' => $voucher_packet->price,
                     'purchased_at' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                     'expired_at' => $voucher_packet->expired_date
                         ? Carbon::parse($voucher_packet->expired_date)->endOfDay()->toDateTimeString()

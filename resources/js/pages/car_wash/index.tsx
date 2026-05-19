@@ -22,11 +22,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, X, XCircle } from "lucide-react";
+import { Search, X, XCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { usePermission } from "@/hooks/use-permission";
+import { Modal, ModalHeader } from "@/components/ui/modal";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Staff {
     full_name: string;
@@ -50,7 +53,7 @@ interface Voucher {
 }
 
 interface ServiceRecords {
-    id: string;
+    id: string | number;
     staff: Staff;
     car: Car;
     stall: Stall;
@@ -59,6 +62,38 @@ interface ServiceRecords {
     service_date: string;
     voucher?: Voucher;
     status: string;
+    service_records?: Array<{
+        id: number | string;
+        price?: number;
+        product?: {
+            id: number;
+            name: string;
+            price: number;
+        } | null;
+        stall?: {
+            id: number;
+            name: string;
+        } | null;
+        staff?: {
+            id: number;
+            full_name: string;
+        } | null;
+    }>;
+    items?: Array<{
+        id: number;
+        item_id: number;
+        item?: {
+            id: number;
+            name: string;
+            sku: string | null;
+        } | null;
+        quantity: number;
+        price: number;
+        subtotal: number;
+    }>;
+    paid_amount?: number | null;
+    change_amount?: number | null;
+    transaction_type?: string;
 }
 
 function CancelConfirmDialog({
@@ -161,6 +196,18 @@ export default function CarWashIndex() {
     const pagination = props.service_records;
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
 
+    const [selectedWashDetail, setSelectedWashDetail] = useState<ServiceRecords | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
     // Search states
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -251,10 +298,21 @@ export default function CarWashIndex() {
                 const record = row.original;
 
                 return (
-                    <div className="flex items-center gap-1">
-                        {record.status !== "cancelled" && hasPermission("cancel transactions") && (
+                    <div className="flex items-center gap-1.5 justify-center">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1 font-semibold"
+                            onClick={() => {
+                                setSelectedWashDetail(record);
+                                setIsDetailModalOpen(true);
+                            }}
+                        >
+                            <Info className="h-3.5 w-3.5" /> Detail
+                        </Button>
+                        {/* {record.status !== "cancelled" && hasPermission("cancel transactions") && (
                             <CancelConfirmDialog record={record} onConfirm={() => { }} />
-                        )}
+                        )} */}
                     </div>
                 );
             },
@@ -279,6 +337,7 @@ export default function CarWashIndex() {
     };
 
     useEffect(() => {
+        if (!isMounted.current) return;
         router.get(
             route("car-washes.index"),
             { page: 1, per_page: perPage, search: debouncedSearchQuery },
@@ -301,89 +360,248 @@ export default function CarWashIndex() {
                     />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between flex-row">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page === 1}
-                                onClick={() =>
-                                    handlePageChange(pagination.current_page - 1)
-                                }
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-2 text-sm">
-                                Halaman {pagination.current_page} dari{" "}
-                                {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                    pagination.current_page === pagination.last_page
-                                }
-                                onClick={() =>
-                                    handlePageChange(pagination.current_page + 1)
-                                }
-                            >
-                                Next
-                            </Button>
+                            <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="min-w-[60px] justify-between h-8"
+                                    >
+                                        {perPage}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {[5, 10, 20, 50, 100].map((size) => (
+                                        <DropdownMenuItem
+                                            key={size}
+                                            onSelect={() => handlePerPageChange(size)}
+                                        >
+                                            {size}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
-                        <div className="flex flex-row items-center gap-2">
-                            <div className="flex items-center gap-2 justify-end">
-                                <span className="text-sm">Baris per halaman:</span>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="min-w-[60px] justify-between"
-                                        >
-                                            {perPage}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {[5, 10, 20, 50, 100].map((size) => (
-                                            <DropdownMenuItem
-                                                key={size}
-                                                onSelect={() => handlePerPageChange(size)}
-                                            >
-                                                {size}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Customer / Plat Nomor..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 pr-10"
-                                    />
-                                    {searchQuery && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={clearSearch}
-                                            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Customer / Plat Nomor..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 pr-8 h-8 text-sm"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearSearch}
+                                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
                     <div>
                         <DataTable columns={columns} data={pagination.data} />
                     </div>
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            label="riwayat cuci mobil"
+                        />
+                    )}
                 </div>
             </div>
+
+            {/* Car Wash Detail Modal */}
+            <Modal open={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} className="max-w-4xl">
+                <ModalHeader title={`Detail Transaksi Pencucian #${selectedWashDetail?.id}`} />
+                {selectedWashDetail && (
+                    <div className="space-y-6 px-1 py-2 max-h-[80vh] overflow-y-auto">
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="bg-muted/30 p-3 rounded-lg border">
+                                <span className="text-xs text-muted-foreground block mb-1">Status Transaksi</span>
+                                <div>
+                                    {selectedWashDetail.status === "cancelled" ? (
+                                        <Badge variant="destructive">Dibatalkan</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">Aktif</Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="bg-muted/30 p-3 rounded-lg border">
+                                <span className="text-xs text-muted-foreground block mb-1">Tanggal & Waktu</span>
+                                <span className="font-semibold text-foreground">
+                                    {selectedWashDetail.service_date
+                                        ? new Intl.DateTimeFormat("id-ID", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            timeZone: "Asia/Jakarta",
+                                        }).format(new Date(selectedWashDetail.service_date))
+                                        : "-"}
+                                </span>
+                            </div>
+                            <div className="bg-muted/30 p-3 rounded-lg border">
+                                <span className="text-xs text-muted-foreground block mb-1">Customer & Kendaraan</span>
+                                <span className="font-semibold text-foreground">
+                                    {selectedWashDetail.car?.customer?.name} ({selectedWashDetail.car?.plate_number})
+                                </span>
+                            </div>
+                            <div className="bg-muted/30 p-3 rounded-lg border">
+                                <span className="text-xs text-muted-foreground block mb-1">Metode Pembayaran</span>
+                                <span className="font-semibold text-foreground">
+                                    {selectedWashDetail.payment_type}
+                                    {selectedWashDetail.voucher && (
+                                        <span className="text-xs text-muted-foreground block">
+                                            Voucher SN: {selectedWashDetail.voucher.serial_number}
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="bg-muted/30 p-3 rounded-lg border">
+                                <span className="text-xs text-muted-foreground block mb-1">Kasir</span>
+                                <span className="font-semibold text-foreground">
+                                    {selectedWashDetail.staff?.full_name || "-"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Service Records Table */}
+                        <div className="space-y-2">
+                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Detail Layanan Cuci</h3>
+                            <div className="border rounded-lg overflow-hidden bg-card">
+                                <Table className="w-full text-sm text-left">
+                                    <TableHeader className="bg-muted/40">
+                                        <TableRow>
+                                            <TableHead className="font-semibold">Layanan</TableHead>
+                                            <TableHead className="font-semibold text-center">Stall</TableHead>
+                                            <TableHead className="font-semibold text-center">Pencuci</TableHead>
+                                            <TableHead className="font-semibold text-right">Harga</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {selectedWashDetail.service_records && selectedWashDetail.service_records.length > 0 ? (
+                                            selectedWashDetail.service_records.map((sr) => (
+                                                <TableRow key={sr.id}>
+                                                    <TableCell className="font-semibold text-sm">
+                                                        {sr.product?.name || "Layanan Cuci"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {sr.stall?.name || "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-medium">
+                                                        {sr.staff?.full_name || "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-semibold text-foreground">
+                                                        {sr.product ? formatRupiah(sr.price ?? sr.product.price) : "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                                    Tidak ada data layanan
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        {/* Sold Items Detail Block */}
+                        <div className="space-y-2">
+                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Barang / Item Pelengkap</h3>
+                            {selectedWashDetail.items && selectedWashDetail.items.length > 0 ? (
+                                <div className="border rounded-lg overflow-hidden bg-card">
+                                    <Table className="w-full text-sm text-left">
+                                        <TableHeader className="bg-muted/40">
+                                            <TableRow>
+                                                <TableHead className="font-semibold">Nama Barang</TableHead>
+                                                <TableHead className="font-semibold text-center">Qty</TableHead>
+                                                <TableHead className="font-semibold text-right">Harga Satuan</TableHead>
+                                                <TableHead className="font-semibold text-right">Subtotal</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {selectedWashDetail.items.map((item) => {
+                                                const isIncluded = Number(item.price) === 0;
+                                                return (
+                                                    <TableRow key={item.id}>
+                                                        <TableCell className="font-semibold text-sm">
+                                                            {item.item?.name || `Item ID: ${item.item_id}`}
+                                                            {isIncluded && (
+                                                                <Badge variant="secondary" className="ml-2 text-[9px] font-bold text-blue-600 bg-blue-50">
+                                                                    INCLUDED (FREE)
+                                                                </Badge>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-medium">
+                                                            {item.quantity}
+                                                        </TableCell>
+                                                        <TableCell className="text-right text-muted-foreground">
+                                                            {isIncluded ? "Rp 0" : formatRupiah(item.price)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-bold text-foreground">
+                                                            {isIncluded ? "Rp 0" : formatRupiah(item.subtotal)}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-muted-foreground bg-muted/10 p-4 rounded-xl text-center border border-dashed">
+                                    Tidak ada item pelengkap yang ditambahkan.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Grand Total Area */}
+                        <div className="border-t pt-4 flex flex-col items-end space-y-1.5">
+                            <div className="flex justify-between w-full max-w-xs text-sm">
+                                <span className="text-muted-foreground">Grand Total:</span>
+                                <span className="font-extrabold text-lg text-blue-600 dark:text-blue-400">
+                                    {formatRupiah(selectedWashDetail.total_amount)}
+                                </span>
+                            </div>
+                            {selectedWashDetail.paid_amount !== null && selectedWashDetail.paid_amount !== undefined && (
+                                <div className="flex justify-between w-full max-w-xs text-sm">
+                                    <span className="text-muted-foreground">Nominal Bayar:</span>
+                                    <span className="font-medium text-foreground">
+                                        {formatRupiah(selectedWashDetail.paid_amount)}
+                                    </span>
+                                </div>
+                            )}
+                            {/* {selectedWashDetail.change_amount !== null && selectedWashDetail.change_amount !== undefined && (
+                                <div className="flex justify-between w-full max-w-xs text-sm">
+                                    <span className="text-muted-foreground">Kembalian:</span>
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                        {formatRupiah(selectedWashDetail.change_amount)}
+                                    </span>
+                                </div>
+                            )} */}
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)} className="px-6">
+                                Tutup
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </AppLayout>
     );
 }
