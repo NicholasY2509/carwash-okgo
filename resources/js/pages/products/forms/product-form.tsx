@@ -37,13 +37,19 @@ interface Props {
     onCancel: () => void;
 }
 
-export default function ProductForm({ product, parties, onSuccess, onCancel }: Props) {
+export default function ProductForm({
+    product,
+    parties,
+    onSuccess,
+    onCancel,
+}: Props) {
     const isEditMode = !!product;
 
-    const initialSplits = product?.splits?.map(s => ({
-        party_id: s.party_id.toString(),
-        percentage: s.percentage.toString()
-    })) || [];
+    const initialSplits =
+        product?.splits?.map((s) => ({
+            party_id: s.party_id.toString(),
+            percentage: s.percentage.toString(),
+        })) || [];
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: product?.name || "",
@@ -54,32 +60,44 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
     });
 
     const totalPercentage = useMemo(() => {
-        return data.splits.reduce((acc, curr) => acc + (parseFloat(curr.percentage) || 0), 0);
+        return data.splits.reduce(
+            (acc, curr) => acc + (parseFloat(curr.percentage) || 0),
+            0,
+        );
     }, [data.splits]);
 
     function handleAddSplit() {
         // Find a party that is not yet selected, if any
-        const selectedPartyIds = data.splits.map(s => s.party_id);
-        const availableParty = parties.find(p => !selectedPartyIds.includes(p.id.toString()));
-        
+        const selectedPartyIds = data.splits.map((s) => s.party_id);
+        const availableParty = parties.find(
+            (p) => !selectedPartyIds.includes(p.id.toString()),
+        );
+
         setData("splits", [
             ...data.splits,
-            { 
-                party_id: availableParty ? availableParty.id.toString() : "", 
-                percentage: "" 
-            }
+            {
+                party_id: availableParty ? availableParty.id.toString() : "",
+                percentage: "",
+            },
         ]);
     }
 
     function handleRemoveSplit(index: number) {
-        setData("splits", data.splits.filter((_, i) => i !== index));
+        setData(
+            "splits",
+            data.splits.filter((_, i) => i !== index),
+        );
     }
 
-    function handleSplitChange(index: number, field: "party_id" | "percentage", value: string) {
+    function handleSplitChange(
+        index: number,
+        field: "party_id" | "percentage",
+        value: string,
+    ) {
         const newSplits = [...data.splits];
         newSplits[index] = {
             ...newSplits[index],
-            [field]: value
+            [field]: value,
         };
         setData("splits", newSplits);
     }
@@ -94,18 +112,25 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                     title: "Bagi Hasil Kosong",
                     text: "Silakan tambahkan minimal satu pihak pembagian hasil.",
                     confirmButtonText: "OK",
-                    confirmButtonColor: "#3b82f6"
+                    confirmButtonColor: "#3b82f6",
                 });
                 return;
             }
 
-            if (data.splits.some(s => !s.party_id || !s.percentage || parseFloat(s.percentage) <= 0)) {
+            if (
+                data.splits.some(
+                    (s) =>
+                        !s.party_id ||
+                        !s.percentage ||
+                        parseFloat(s.percentage) <= 0,
+                )
+            ) {
                 Swal.fire({
                     icon: "error",
                     title: "Data Tidak Valid",
                     text: "Harap pastikan semua pihak dipilih dan persentase diisi dengan angka positif.",
                     confirmButtonText: "OK",
-                    confirmButtonColor: "#3b82f6"
+                    confirmButtonColor: "#3b82f6",
                 });
                 return;
             }
@@ -116,7 +141,7 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                     title: "Total Persentase Salah",
                     text: `Total persentase pembagian hasil harus tepat 100%. Saat ini: ${totalPercentage}%`,
                     confirmButtonText: "OK",
-                    confirmButtonColor: "#3b82f6"
+                    confirmButtonColor: "#3b82f6",
                 });
                 return;
             }
@@ -125,7 +150,9 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
         if (isEditMode) {
             patch(route("products.update", product.id), {
                 onSuccess: () => {
-                    toast.success("Perubahan pada produk telah berhasil disimpan.");
+                    toast.success(
+                        "Perubahan pada produk telah berhasil disimpan.",
+                    );
                     onSuccess();
                 },
                 onError: (errors) => {
@@ -147,7 +174,10 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-6 max-h-[75vh] overflow-y-auto"
+        >
             <fieldset disabled={processing} className="space-y-4">
                 <div>
                     <Label htmlFor="name" required>
@@ -162,7 +192,9 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                         className="mt-1"
                     />
                     {errors.name && (
-                        <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+                        <p className="text-sm text-red-600 mt-1">
+                            {errors.name}
+                        </p>
                     )}
                 </div>
 
@@ -187,7 +219,9 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                         className="mt-1"
                     />
                     {errors.price && (
-                        <p className="text-sm text-red-600 mt-1">{errors.price}</p>
+                        <p className="text-sm text-red-600 mt-1">
+                            {errors.price}
+                        </p>
                     )}
                 </div>
 
@@ -219,17 +253,27 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                                     // Add first split automatically
                                     const firstParty = parties[0];
                                     setData("splits", [
-                                        { party_id: firstParty ? firstParty.id.toString() : "", percentage: "100" }
+                                        {
+                                            party_id: firstParty
+                                                ? firstParty.id.toString()
+                                                : "",
+                                            percentage: "100",
+                                        },
                                     ]);
                                 }
                             }}
                         />
                         <div className="grid gap-1.5 leading-none">
-                            <Label htmlFor="is_split_profits" className="cursor-pointer font-semibold text-sm">
+                            <Label
+                                htmlFor="is_split_profits"
+                                className="cursor-pointer font-semibold text-sm"
+                            >
                                 Aktifkan Pembagian Hasil (Profit Sharing)
                             </Label>
                             <p className="text-xs text-muted-foreground">
-                                Centang jika laba / omset dari penjualan produk ini dibagi ke beberapa pihak (misal: owner, investor).
+                                Centang jika laba / omset dari penjualan produk
+                                ini dibagi ke beberapa pihak (misal: owner,
+                                investor).
                             </p>
                         </div>
                     </div>
@@ -238,13 +282,17 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                     {data.is_split_profits && (
                         <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
                             <div className="flex justify-between items-center">
-                                <Label className="text-sm font-semibold">Pengaturan Bagi Hasil</Label>
+                                <Label className="text-sm font-semibold">
+                                    Pengaturan Bagi Hasil
+                                </Label>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     onClick={handleAddSplit}
-                                    disabled={data.splits.length >= parties.length}
+                                    disabled={
+                                        data.splits.length >= parties.length
+                                    }
                                     className="h-8 text-xs flex items-center gap-1"
                                 >
                                     <Plus className="h-3 w-3" /> Tambah Pihak
@@ -253,28 +301,49 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
 
                             {parties.length === 0 ? (
                                 <div className="text-xs text-destructive italic">
-                                    Belum ada data Pihak master. Harap tambahkan Master Pihak Bagi Hasil terlebih dahulu.
+                                    Belum ada data Pihak master. Harap tambahkan
+                                    Master Pihak Bagi Hasil terlebih dahulu.
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     {data.splits.map((split, index) => (
-                                        <div key={index} className="flex items-center gap-2">
+                                        <div
+                                            key={index}
+                                            className="flex items-center gap-2"
+                                        >
                                             {/* Select Party */}
                                             <div className="flex-1">
                                                 <select
                                                     value={split.party_id}
-                                                    onChange={(e) => handleSplitChange(index, "party_id", e.target.value)}
+                                                    onChange={(e) =>
+                                                        handleSplitChange(
+                                                            index,
+                                                            "party_id",
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                                                 >
-                                                    <option value="" disabled>-- Pilih Pihak --</option>
+                                                    <option value="" disabled>
+                                                        -- Pilih Pihak --
+                                                    </option>
                                                     {parties.map((p) => {
                                                         // Disable option if it is selected in another row
-                                                        const isSelectedElsewhere = data.splits.some((s, idx) => s.party_id === p.id.toString() && idx !== index);
+                                                        const isSelectedElsewhere =
+                                                            data.splits.some(
+                                                                (s, idx) =>
+                                                                    s.party_id ===
+                                                                        p.id.toString() &&
+                                                                    idx !==
+                                                                        index,
+                                                            );
                                                         return (
-                                                            <option 
-                                                                key={p.id} 
+                                                            <option
+                                                                key={p.id}
                                                                 value={p.id.toString()}
-                                                                disabled={isSelectedElsewhere}
+                                                                disabled={
+                                                                    isSelectedElsewhere
+                                                                }
                                                             >
                                                                 {p.name}
                                                             </option>
@@ -291,10 +360,18 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                                                     max="100"
                                                     placeholder="Laba %"
                                                     value={split.percentage}
-                                                    onChange={(e) => handleSplitChange(index, "percentage", e.target.value)}
+                                                    onChange={(e) =>
+                                                        handleSplitChange(
+                                                            index,
+                                                            "percentage",
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     className="text-center h-9"
                                                 />
-                                                <span className="text-sm font-semibold">%</span>
+                                                <span className="text-sm font-semibold">
+                                                    %
+                                                </span>
                                             </div>
 
                                             {/* Remove Button */}
@@ -302,7 +379,9 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleRemoveSplit(index)}
+                                                onClick={() =>
+                                                    handleRemoveSplit(index)
+                                                }
                                                 className="h-9 w-9 text-destructive hover:bg-destructive/10"
                                             >
                                                 <Trash className="h-4 w-4" />
@@ -312,13 +391,23 @@ export default function ProductForm({ product, parties, onSuccess, onCancel }: P
 
                                     {/* Splits Total / Validation */}
                                     <div className="flex justify-between items-center pt-2 border-t text-xs">
-                                        <span className="text-muted-foreground">Total Persentase:</span>
-                                        <span className={`font-bold ${Math.abs(totalPercentage - 100) < 0.01 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {totalPercentage}% {Math.abs(totalPercentage - 100) < 0.01 ? '✓ (Sesuai)' : '✗ (Harus 100%)'}
+                                        <span className="text-muted-foreground">
+                                            Total Persentase:
+                                        </span>
+                                        <span
+                                            className={`font-bold ${Math.abs(totalPercentage - 100) < 0.01 ? "text-emerald-600" : "text-red-500"}`}
+                                        >
+                                            {totalPercentage}%{" "}
+                                            {Math.abs(totalPercentage - 100) <
+                                            0.01
+                                                ? "✓ (Sesuai)"
+                                                : "✗ (Harus 100%)"}
                                         </span>
                                     </div>
                                     {errors.splits && (
-                                        <p className="text-xs text-red-600 mt-1">{errors.splits}</p>
+                                        <p className="text-xs text-red-600 mt-1">
+                                            {errors.splits}
+                                        </p>
                                     )}
                                 </div>
                             )}
