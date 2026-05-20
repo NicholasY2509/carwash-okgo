@@ -8,6 +8,7 @@ import { LoaderCircle, Search } from "lucide-react";
 import { NumericFormat } from "react-number-format";
 import { toast } from "sonner";
 import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProductProp {
     id: number;
@@ -39,15 +40,21 @@ interface Props {
     onCancel: () => void;
 }
 
-export default function ItemForm({ item, products, onSuccess, onCancel }: Props) {
+export default function ItemForm({
+    item,
+    products,
+    onSuccess,
+    onCancel,
+}: Props) {
     const isEditMode = !!item;
     const [searchQuery, setSearchQuery] = useState("");
 
     // Initialize services that are already associated with the item
-    const initialServices = item?.products?.map((p) => ({
-        id: p.id,
-        quantity: p.pivot.quantity,
-    })) || [];
+    const initialServices =
+        item?.products?.map((p) => ({
+            id: p.id,
+            quantity: p.pivot.quantity,
+        })) || [];
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         sku: item?.sku || "",
@@ -59,16 +66,19 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
     });
 
     const filteredProducts = products.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     function handleServiceToggle(productId: number, checked: boolean) {
         if (checked) {
-            setData("services", [...data.services, { id: productId, quantity: 1 }]);
+            setData("services", [
+                ...data.services,
+                { id: productId, quantity: 1 },
+            ]);
         } else {
             setData(
                 "services",
-                data.services.filter((s) => s.id !== productId)
+                data.services.filter((s) => s.id !== productId),
             );
         }
     }
@@ -76,7 +86,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
     function handleServiceQtyChange(productId: number, qty: number) {
         setData(
             "services",
-            data.services.map((s) => (s.id === productId ? { ...s, quantity: qty } : s))
+            data.services.map((s) =>
+                s.id === productId ? { ...s, quantity: qty } : s,
+            ),
         );
     }
 
@@ -108,7 +120,10 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-6 max-h-[75vh] overflow-y-auto"
+        >
             <fieldset disabled={processing} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -120,7 +135,11 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                             value={data.sku}
                             onChange={(e) => setData("sku", e.target.value)}
                         />
-                        {errors.sku && <p className="text-xs text-red-500 mt-1">{errors.sku}</p>}
+                        {errors.sku && (
+                            <p className="text-xs text-red-500 mt-1">
+                                {errors.sku}
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -134,7 +153,11 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                             value={data.name}
                             onChange={(e) => setData("name", e.target.value)}
                         />
-                        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                        {errors.name && (
+                            <p className="text-xs text-red-500 mt-1">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -151,10 +174,17 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                             decimalSeparator=","
                             value={data.price}
                             onValueChange={(values) => {
-                                setData("price", values.floatValue?.toString() || "");
+                                setData(
+                                    "price",
+                                    values.floatValue?.toString() || "",
+                                );
                             }}
                         />
-                        {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
+                        {errors.price && (
+                            <p className="text-xs text-red-500 mt-1">
+                                {errors.price}
+                            </p>
+                        )}
                     </div>
 
                     {!isEditMode && (
@@ -165,10 +195,14 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                                 type="number"
                                 min="0"
                                 value={data.stock}
-                                onChange={(e) => setData("stock", e.target.value)}
+                                onChange={(e) =>
+                                    setData("stock", e.target.value)
+                                }
                             />
                             {errors.stock && (
-                                <p className="text-xs text-red-500 mt-1">{errors.stock}</p>
+                                <p className="text-xs text-red-500 mt-1">
+                                    {errors.stock}
+                                </p>
                             )}
                         </div>
                     )}
@@ -183,7 +217,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                         onChange={(e) => setData("description", e.target.value)}
                     />
                     {errors.description && (
-                        <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+                        <p className="text-xs text-red-500 mt-1">
+                            {errors.description}
+                        </p>
                     )}
                 </div>
 
@@ -191,10 +227,13 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
 
                 <div>
                     <Label className="text-sm font-semibold block mb-2">
-                        Pilih Layanan / Service Cuci Yang Menggunakan Barang Ini:
+                        Pilih Layanan / Service Cuci Yang Menggunakan Barang
+                        Ini:
                     </Label>
                     <p className="text-xs text-muted-foreground mb-4">
-                        Tentukan layanan mana saja yang menggunakan barang ini secara otomatis ketika dicuci, beserta jumlah penggunaannya.
+                        Tentukan layanan mana saja yang menggunakan barang ini
+                        secara otomatis ketika dicuci, beserta jumlah
+                        penggunaannya.
                     </p>
 
                     <div className="relative mb-3">
@@ -215,7 +254,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                             </div>
                         ) : (
                             filteredProducts.map((p) => {
-                                const selectedSvc = data.services.find((s) => s.id === p.id);
+                                const selectedSvc = data.services.find(
+                                    (s) => s.id === p.id,
+                                );
                                 const isChecked = !!selectedSvc;
 
                                 return (
@@ -228,7 +269,10 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                                                 id={`svc-${p.id}`}
                                                 checked={isChecked}
                                                 onCheckedChange={(checked) =>
-                                                    handleServiceToggle(p.id, !!checked)
+                                                    handleServiceToggle(
+                                                        p.id,
+                                                        !!checked,
+                                                    )
                                                 }
                                             />
                                             <Label
@@ -241,7 +285,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
 
                                         {isChecked && (
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">Jumlah dikonsumsi:</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    Jumlah dikonsumsi:
+                                                </span>
                                                 <Input
                                                     type="number"
                                                     min="1"
@@ -250,7 +296,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                                                     onChange={(e) =>
                                                         handleServiceQtyChange(
                                                             p.id,
-                                                            parseInt(e.target.value) || 1
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 1,
                                                         )
                                                     }
                                                 />
@@ -269,7 +317,9 @@ export default function ItemForm({ item, products, onSuccess, onCancel }: Props)
                     Batal
                 </Button>
                 <Button type="submit" disabled={processing}>
-                    {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                    {processing && (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     {isEditMode ? "Simpan Perubahan" : "Tambah Barang"}
                 </Button>
             </div>
