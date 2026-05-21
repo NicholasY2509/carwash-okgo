@@ -27,6 +27,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\Reports\CarWashRevenueReportController;
 use App\Http\Controllers\Reports\VoucherSalesReportController;
 use App\Http\Controllers\Reports\StockReportController;
+use App\Http\Controllers\QueueController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
@@ -98,6 +99,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::controller(\App\Http\Controllers\StaffIncentiveController::class)->group(function () {
         Route::get('staff-incentives', 'index')->name('staff-incentives.index');
+    });
+
+    Route::controller(QueueController::class)->group(function () {
+        Route::get('queue', 'index')->name('queue.index');
+        Route::post('queue/{id}/status', 'updateStatus')->name('queue.update-status');
     });
 
     // Report Routes

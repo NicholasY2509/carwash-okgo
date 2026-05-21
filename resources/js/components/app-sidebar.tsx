@@ -24,6 +24,7 @@ import {
     User2,
     Wrench,
     FileBarChart2,
+    Tv,
 } from "lucide-react";
 import AppLogo from "./app-logo";
 import { url } from "inspector";
@@ -49,6 +50,11 @@ const allNavItems = {
             title: "Pembelian Voucher",
             url: "/purchased-packets/create",
             icon: Ticket,
+        },
+        {
+            title: "Antrian",
+            url: "/queue",
+            icon: Tv,
         },
         {
             title: "Produk",
@@ -217,7 +223,7 @@ const allNavItems = {
                 {
                     title: "Pengaturan Whatsapp",
                     url: "/settings/whatsapp",
-                }
+                },
             ],
         },
     ],
