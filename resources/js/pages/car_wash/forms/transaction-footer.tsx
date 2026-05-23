@@ -42,23 +42,30 @@ export const TransactionFooter = memo(function TransactionFooter({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex flex-col w-full sm:w-auto">
                     <div className="flex items-center gap-4 justify-between sm:justify-start">
-                        <span className="text-muted-foreground text-sm font-medium">Total Harga:</span>
+                        <span className="text-muted-foreground text-sm font-medium">
+                            Total Harga:
+                        </span>
                         <span className="text-2xl sm:text-3xl font-extrabold text-blue-600">
                             {formattedTotalHarga}
                         </span>
                     </div>
-                    {((servicePrice !== undefined && servicePrice > 0) || (itemsPrice !== undefined && itemsPrice > 0)) && (
+                    {((servicePrice !== undefined && servicePrice > 0) ||
+                        (itemsPrice !== undefined && itemsPrice > 0)) && (
                         <div className="text-xs text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                             {servicePrice !== undefined && servicePrice > 0 && (
                                 <div className="flex items-center gap-1">
                                     <span>Layanan:</span>
-                                    <span className="font-semibold text-foreground">{currencyFormatter.format(servicePrice)}</span>
+                                    <span className="font-semibold text-foreground">
+                                        {currencyFormatter.format(servicePrice)}
+                                    </span>
                                 </div>
                             )}
                             {itemsPrice !== undefined && itemsPrice > 0 && (
                                 <div className="flex items-center gap-1">
                                     <span>Barang Tambahan:</span>
-                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{currencyFormatter.format(itemsPrice)}</span>
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                        +{currencyFormatter.format(itemsPrice)}
+                                    </span>
                                 </div>
                             )}
                         </div>

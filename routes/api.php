@@ -38,3 +38,7 @@ Route::controller(CarController::class)->group(function () {
     Route::get('/cars/search', 'search');
 });
 
+Route::controller(\App\Http\Controllers\MidtransController::class)->group(function () {
+    Route::post('/midtrans/webhook', 'webhook');
+    Route::get('/transactions/{id}/status', 'status');
+});

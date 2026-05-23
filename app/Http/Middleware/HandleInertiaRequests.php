@@ -54,6 +54,7 @@ class HandleInertiaRequests extends Middleware
             ] : null,
             'flash' => [
                 'transaction' => fn () => $request->session()->get('transaction'),
+                'midtrans' => fn () => $request->session()->get('midtrans'),
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],

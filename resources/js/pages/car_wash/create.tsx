@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import CreateSpecialProgramPurchase from "./forms/special-program-form";
 import CarPlateSearch from "./forms/car-plate-search";
+import { formatCurrency } from "@/lib/utils";
+import formatRupiah from "@/lib/rupiah-formatter";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -79,14 +81,15 @@ interface FooterData {
 type FormType = "Cash" | "Voucher" | "Return" | "Special Program" | null;
 
 export default function CarWashCreate() {
-    const { props } =
-        usePage<PageProps<{
+    const { props } = usePage<
+        PageProps<{
             products: Product[];
             stalls: Stall[];
             car_types: { id: number; name: string }[];
             staffs: { id: number; full_name: string }[];
             items: ItemProp[];
-        }>>();
+        }>
+    >();
     const products = props.products || [];
     const stalls = props.stalls || [];
     const staffs = props.staffs || [];
@@ -113,10 +116,17 @@ export default function CarWashCreate() {
     const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
 
     const servicePrice = Number(selectedProduct?.price || 0);
-    const boundItemIds = selectedProduct?.items?.map(i => i.id) || [];
+    const boundItemIds = selectedProduct?.items?.map((i) => i.id) || [];
     const itemsPrice = (props.items || [])
-        .filter((item: ItemProp) => selectedItemIds.includes(item.id) && !boundItemIds.includes(item.id))
-        .reduce((sum: number, item: ItemProp) => sum + Number(item.price || 0), 0);
+        .filter(
+            (item: ItemProp) =>
+                selectedItemIds.includes(item.id) &&
+                !boundItemIds.includes(item.id),
+        )
+        .reduce(
+            (sum: number, item: ItemProp) => sum + Number(item.price || 0),
+            0,
+        );
 
     const totalHarga = servicePrice + itemsPrice;
     const nilaiBayar = parseFloat(nominalBayar) || 0;
@@ -132,7 +142,11 @@ export default function CarWashCreate() {
         setFooterError(null);
 
         const footerData: FooterData = {
-            stall_id: selectedStallId ? parseInt(selectedStallId) : (stalls.length > 0 ? stalls[0].id : 1),
+            stall_id: selectedStallId
+                ? parseInt(selectedStallId)
+                : stalls.length > 0
+                  ? stalls[0].id
+                  : 1,
             product_id: String(selectedProduct?.id || ""),
             payment_method: paymentMethod,
             nominal_bayar: nilaiBayar,
@@ -167,7 +181,7 @@ export default function CarWashCreate() {
 
     useEffect(() => {
         if (selectedProduct && selectedProduct.items) {
-            const defaultItemIds = selectedProduct.items.map(item => item.id);
+            const defaultItemIds = selectedProduct.items.map((item) => item.id);
             setSelectedItemIds(defaultItemIds);
         } else {
             setSelectedItemIds([]);
@@ -234,7 +248,10 @@ export default function CarWashCreate() {
 
                 {activeForm && (
                     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                        <SheetContent side="bottom" className="flex flex-col h-screen w-screen sm:max-w-none border-none p-0">
+                        <SheetContent
+                            side="bottom"
+                            className="flex flex-col h-screen w-screen sm:max-w-none border-none p-0"
+                        >
                             <SheetHeader className="px-6 py-4 border-b">
                                 <SheetTitle>Pembayaran {activeForm}</SheetTitle>
                             </SheetHeader>
@@ -244,52 +261,85 @@ export default function CarWashCreate() {
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="product-select" required>Produk / Layanan</Label>
+                                            <Label
+                                                htmlFor="product-select"
+                                                required
+                                            >
+                                                Produk / Layanan
+                                            </Label>
                                             <Select
-                                                value={String(selectedProduct?.id || "")}
+                                                value={String(
+                                                    selectedProduct?.id || "",
+                                                )}
                                                 onValueChange={(productId) => {
                                                     const product =
                                                         products.find(
                                                             (p: Product) =>
-                                                                String(p.id) === productId,
+                                                                String(p.id) ===
+                                                                productId,
                                                         ) || null;
                                                     setSelectedProduct(product);
                                                 }}
                                             >
-                                                <SelectTrigger id="product-select" className="w-full">
+                                                <SelectTrigger
+                                                    id="product-select"
+                                                    className="w-full"
+                                                >
                                                     <SelectValue placeholder="Pilih produk..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {products.map((product: Product) => (
-                                                        <SelectItem
-                                                            key={product.id}
-                                                            value={String(product.id)}
-                                                        >
-                                                            {product.name} - Rp {product.price.toLocaleString("id-ID")}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {products.map(
+                                                        (product: Product) => (
+                                                            <SelectItem
+                                                                key={product.id}
+                                                                value={String(
+                                                                    product.id,
+                                                                )}
+                                                            >
+                                                                {product.name} -
+                                                                Rp{" "}
+                                                                {formatRupiah(
+                                                                    product.price,
+                                                                )}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="staff-select">Staff Washer</Label>
+                                            <Label htmlFor="staff-select">
+                                                Staff Washer
+                                            </Label>
                                             <Select
                                                 value={selectedStaffId}
-                                                onValueChange={setSelectedStaffId}
+                                                onValueChange={
+                                                    setSelectedStaffId
+                                                }
                                             >
-                                                <SelectTrigger id="staff-select" className="w-full">
+                                                <SelectTrigger
+                                                    id="staff-select"
+                                                    className="w-full"
+                                                >
                                                     <SelectValue placeholder="Pilih staff washer..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {staffs.map((st: { id: number; full_name: string }) => (
-                                                        <SelectItem
-                                                            key={st.id}
-                                                            value={String(st.id)}
-                                                        >
-                                                            {st.full_name}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {staffs.map(
+                                                        (st: {
+                                                            id: number;
+                                                            full_name: string;
+                                                        }) => (
+                                                            <SelectItem
+                                                                key={st.id}
+                                                                value={String(
+                                                                    st.id,
+                                                                )}
+                                                            >
+                                                                {st.full_name}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -297,28 +347,58 @@ export default function CarWashCreate() {
 
                                     {activeForm === "Cash" && (
                                         <div className="space-y-3">
-                                            <Label required>Metode Pembayaran</Label>
+                                            <Label required>
+                                                Metode Pembayaran
+                                            </Label>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                                 {[
-                                                    { value: "Cash", label: "Cash", icon: Banknote },
-                                                    { value: "Debit/Credit", label: "Card", icon: CreditCard },
-                                                    { value: "Transfer", label: "Transfer", icon: Landmark },
-                                                    { value: "QRIS", label: "QRIS", icon: QrCode },
+                                                    {
+                                                        value: "Cash",
+                                                        label: "Cash",
+                                                        icon: Banknote,
+                                                    },
+                                                    {
+                                                        value: "Debit/Credit",
+                                                        label: "Card",
+                                                        icon: CreditCard,
+                                                    },
+                                                    {
+                                                        value: "Transfer",
+                                                        label: "Transfer",
+                                                        icon: Landmark,
+                                                    },
+                                                    {
+                                                        value: "QRIS",
+                                                        label: "QRIS",
+                                                        icon: QrCode,
+                                                    },
                                                 ].map((method) => {
-                                                    const isSelected = paymentMethod === method.value;
-                                                    const IconComponent = method.icon;
+                                                    const isSelected =
+                                                        paymentMethod ===
+                                                        method.value;
+                                                    const IconComponent =
+                                                        method.icon;
                                                     return (
                                                         <button
                                                             key={method.value}
                                                             type="button"
-                                                            onClick={() => setPaymentMethod(method.value)}
-                                                            className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${isSelected
-                                                                ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm font-semibold"
-                                                                : "border-muted bg-card hover:bg-accent text-card-foreground"
-                                                                }`}
+                                                            onClick={() =>
+                                                                setPaymentMethod(
+                                                                    method.value,
+                                                                )
+                                                            }
+                                                            className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${
+                                                                isSelected
+                                                                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm font-semibold"
+                                                                    : "border-muted bg-card hover:bg-accent text-card-foreground"
+                                                            }`}
                                                         >
-                                                            <IconComponent className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`} />
-                                                            <span className="text-sm">{method.label}</span>
+                                                            <IconComponent
+                                                                className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`}
+                                                            />
+                                                            <span className="text-sm">
+                                                                {method.label}
+                                                            </span>
                                                         </button>
                                                     );
                                                 })}
@@ -338,14 +418,14 @@ export default function CarWashCreate() {
                                 canSubmit={
                                     activeForm === "Voucher"
                                         ? (formRef.current?.canSubmit?.() ??
-                                            false)
+                                          false)
                                         : activeForm === "Return"
+                                          ? (formRef.current?.canSubmit?.() ??
+                                            false)
+                                          : activeForm === "Cash"
                                             ? (formRef.current?.canSubmit?.() ??
-                                                false)
-                                            : activeForm === "Cash"
-                                                ? (formRef.current?.canSubmit?.() ??
-                                                    false)
-                                                : true
+                                              false)
+                                            : true
                                 }
                             />
                         </SheetContent>

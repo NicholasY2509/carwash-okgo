@@ -248,6 +248,7 @@ class CarWashController extends Controller
                 'paid_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar : $total_amount) : null,
                 'change_amount' => $request->payment_method === 'Cash' ? ($request->filled('nominal_bayar') ? $request->nominal_bayar - $total_amount : 0) : null,
                 'transaction_type' => 'Cuci Mobil',
+                'status' => $request->payment_method === 'QRIS' ? 'pending' : 'completed',
             ]);
 
             // Save items to transaction
@@ -268,7 +269,49 @@ class CarWashController extends Controller
 
             $sales_transaction->load(['customer', 'car', 'serviceRecords.product', 'items.item']);
 
-            SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
+            $midtransResponse = null;
+            if ($request->payment_method === 'QRIS') {
+                $itemsDetails = [
+                    [
+                        'id' => 'prod_' . $product->id,
+                        'price' => (float)$product->price,
+                        'quantity' => 1,
+                        'name' => substr($product->name, 0, 50)
+                    ]
+                ];
+
+                foreach ($itemsToRecord as $extra) {
+                    $itemModel = \App\Models\Item::find($extra['item_id']);
+                    if ($itemModel && $extra['price'] > 0) {
+                        $itemsDetails[] = [
+                            'id' => 'item_' . $itemModel->id,
+                            'price' => (float)$extra['price'],
+                            'quantity' => $extra['quantity'],
+                            'name' => substr($itemModel->name, 0, 50)
+                        ];
+                    }
+                }
+
+                $customerDetails = [
+                    'first_name' => substr($customer->name, 0, 50),
+                    'phone' => $customer->phone,
+                ];
+
+                $midtransResponse = \App\Services\MidtransService::generateQris(
+                    'CW-' . $sales_transaction->id . '-' . time(),
+                    (float)$total_amount,
+                    $itemsDetails,
+                    $customerDetails
+                );
+            }
+
+            if ($request->payment_method !== 'QRIS') {
+                SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
+            }
+
+            if ($midtransResponse) {
+                return redirect()->back()->with('transaction', $sales_transaction)->with('midtrans', $midtransResponse);
+            }
 
             return redirect()->back()->with('transaction', $sales_transaction);
         } catch (Throwable $th) {

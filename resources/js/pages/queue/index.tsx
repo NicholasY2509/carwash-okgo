@@ -9,11 +9,14 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Maximize2, Minimize2 } from "lucide-react";
 
 interface Car {
     plate_number: string;
-    model: string | null;
+    car_type?: {
+        name: string;
+    } | null;
 }
 
 interface ServiceRecord {
@@ -25,6 +28,9 @@ interface ServiceRecord {
 
 interface Props {
     serviceRecords: ServiceRecord[];
+    filters?: {
+        date: string;
+    };
 }
 
 const formatTimeElapsed = (dateString: string, now: Date) => {
@@ -44,9 +50,10 @@ const formatTimeElapsed = (dateString: string, now: Date) => {
     return `${pad(mins)}:${pad(secs)}`;
 };
 
-export default function QueueIndex({ serviceRecords = [] }: Props) {
+export default function QueueIndex({ serviceRecords = [], filters }: Props) {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [now, setNow] = useState(new Date());
+    const [date, setDate] = useState(filters?.date || "");
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -153,18 +160,34 @@ export default function QueueIndex({ serviceRecords = [] }: Props) {
                 <h1 className="text-3xl font-extrabold tracking-tight">
                     Queue Board
                 </h1>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={toggleFullscreen}
-                    title="Toggle Fullscreen"
-                >
-                    {isFullscreen ? (
-                        <Minimize2 className="h-5 w-5" />
-                    ) : (
-                        <Maximize2 className="h-5 w-5" />
+                <div className="flex items-center gap-4">
+                    {!isFullscreen && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Filter Tanggal:</span>
+                            <Input
+                                type="date"
+                                value={date}
+                                onChange={(e) => {
+                                    setDate(e.target.value);
+                                    router.get(route("queue.index"), { date: e.target.value }, { preserveState: true });
+                                }}
+                                className="w-[150px] h-9"
+                            />
+                        </div>
                     )}
-                </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={toggleFullscreen}
+                        title="Toggle Fullscreen"
+                    >
+                        {isFullscreen ? (
+                            <Minimize2 className="h-5 w-5" />
+                        ) : (
+                            <Maximize2 className="h-5 w-5" />
+                        )}
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-120px)]">

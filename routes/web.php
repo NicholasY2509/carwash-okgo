@@ -54,6 +54,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
+    Route::post('customers/verify-edit-password', [CustomerController::class, 'verifyEditPassword'])->name('customers.verify-edit-password');
+    Route::post('cars/verify-edit-password', [CarController::class, 'verifyEditPassword'])->name('cars.verify-edit-password');
     Route::post('car-washes/{id}/cancel', [CarWashController::class, 'cancel'])->name('car-washes.cancel');
     Route::post('purchased-packets/{id}/cancel', [PurchasedPacketController::class, 'cancel'])->name('purchased-packets.cancel');
 
@@ -98,6 +100,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::controller(\App\Http\Controllers\StaffIncentiveController::class)->group(function () {
+        Route::get('staff-incentives/summary', 'summary')->name('staff-incentives.summary');
         Route::get('staff-incentives', 'index')->name('staff-incentives.index');
     });
 

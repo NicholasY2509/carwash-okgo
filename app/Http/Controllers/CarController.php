@@ -28,12 +28,28 @@ class CarController extends Controller
         ]);
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $car = Car::with(['customer', 'carType', 'salesTransactions.staff'])->find($id);
+        $car = Car::with(['customer', 'carType'])->findOrFail($id);
+        
+        $salesTransactionsQuery = $car->salesTransactions()->with('staff')->latest();
+        
+        if ($request->filled('start_date')) {
+            $salesTransactionsQuery->whereDate('transaction_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $salesTransactionsQuery->whereDate('transaction_date', '<=', $request->end_date);
+        }
+        
+        $salesTransactions = $salesTransactionsQuery->paginate($request->per_page ?? 10)->withQueryString();
+
+        $carTypes = \App\Models\CarType::all();
 
         return Inertia::render('cars/show', [
-            'car' => $car
+            'car' => $car,
+            'salesTransactions' => $salesTransactions,
+            'carTypes' => $carTypes,
+            'filters' => $request->only(['start_date', 'end_date'])
         ]);
     }
 
@@ -80,5 +96,42 @@ class CarController extends Controller
         });
 
         return response()->json($results);
+    }
+
+    public function verifyEditPassword(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $setting = \App\Models\Setting::where('key', 'customer_edit_password')->first();
+
+        if (!$setting || empty($setting->value)) {
+            return response()->json(['message' => 'Password not set by administrator.'], 403);
+        }
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $setting->value)) {
+            return response()->json([
+                'errors' => [
+                    'password' => ['Password yang diberikan salah.']
+                ]
+            ], 422);
+        }
+
+        return response()->json(['message' => 'Password verified.']);
+    }
+
+    public function update(Request $request, Car $car)
+    {
+        $validated = $request->validate([
+            'plate_number' => ['required', 'string', 'max:255'],
+            'model' => ['nullable', 'string', 'max:255'],
+            'color' => ['nullable', 'string', 'max:255'],
+            'car_type_id' => ['nullable', 'exists:car_types,id'],
+        ]);
+
+        $car->update($validated);
+
+        return back()->with('success', 'Car updated successfully.');
     }
 }

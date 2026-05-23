@@ -5,17 +5,17 @@
     <title>Struk Transaksi #{{ $transaction_id }}</title>
     <style>
         @page {
-            size: 8.0in 8.5in;
+            size: 576pt 850pt;
             margin: 0;
         }
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Courier', monospace;
             color: #1e293b;
             margin: 0;
             padding: 35px 40px;
             background-color: #ffffff;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 20px;
+            line-height: 1.8;
         }
         .receipt-container {
             width: 100%;
@@ -24,11 +24,12 @@
         .header {
             text-align: center;
             border-bottom: 2px dashed #cbd5e1;
-            padding-bottom: 15px;
-            margin-bottom: 18px;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
         }
         .brand-name {
-            font-size: 26px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 38px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -36,16 +37,16 @@
             letter-spacing: 2px;
         }
         .brand-subtitle {
-            font-size: 11px;
+            font-size: 18px;
             color: #64748b;
-            margin: 5px 0 0 0;
+            margin: 8px 0 0 0;
             font-weight: 500;
         }
         .title {
-            font-size: 14px;
+            font-size: 22px;
             font-weight: 700;
             color: #0f172a;
-            margin: 12px 0 0 0;
+            margin: 15px 0 0 0;
             letter-spacing: 1px;
         }
         .meta-grid {
@@ -58,7 +59,7 @@
         }
         .meta-label, .meta-value {
             display: table-cell;
-            padding: 3px 0;
+            padding: 5px 0;
         }
         .meta-label {
             color: #64748b;
@@ -70,13 +71,13 @@
             text-align: right;
         }
         .section-title {
-            font-size: 11px;
+            font-size: 18px;
             font-weight: 700;
             color: #0f172a;
             text-transform: uppercase;
             border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
             letter-spacing: 0.5px;
         }
         .details-table {
@@ -88,13 +89,13 @@
             text-align: left;
             color: #64748b;
             font-weight: 600;
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #cbd5e1;
-            font-size: 11px;
+            font-size: 18px;
             text-transform: uppercase;
         }
         .details-table td {
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #f1f5f9;
         }
         .item-name {
@@ -109,20 +110,20 @@
         .total-section {
             background-color: #f8fafc;
             border-radius: 8px;
-            padding: 12px 15px;
-            margin-top: 10px;
+            padding: 15px 20px;
+            margin-top: 15px;
             border: 1px solid #f1f5f9;
         }
         .total-row {
             display: table;
             width: 100%;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .total-row:last-child {
             margin-bottom: 0;
             border-top: 1px dashed #e2e8f0;
-            padding-top: 6px;
-            margin-top: 4px;
+            padding-top: 8px;
+            margin-top: 8px;
         }
         .total-label, .total-value {
             display: table-cell;
@@ -136,24 +137,25 @@
             color: #1e293b;
         }
         .grand-total {
-            font-size: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 24px;
             font-weight: 800;
             color: #0f172a !important;
         }
         .footer {
             text-align: center;
             margin-top: 25px;
-            font-size: 11px;
+            font-size: 18px;
             color: #94a3b8;
         }
         .footer p {
-            margin: 3px 0;
+            margin: 4px 0;
         }
         .thanks {
-            font-size: 12px;
+            font-size: 20px;
             font-weight: 700;
             color: #475569;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -161,8 +163,7 @@
 
 <div class="receipt-container">
     <div class="header">
-        <h1 class="brand-name">KURO CAR WASH</h1>
-        <p class="brand-subtitle">Premium Clean, Express Service & Trusted • kurocarwash.co.id</p>
+        <h1 class="brand-name">KURO AUTO CARE</h1>
         <div class="title">STRUK TRANSAKSI DIGITAL</div>
     </div>
 
@@ -170,50 +171,40 @@
     <div class="meta-grid">
         <div class="meta-row">
             <div class="meta-label">ID Transaksi</div>
-            <div class="meta-value">#{{ $transaction_id }}</div>
+            <div class="meta-value" style="font-family: 'Courier New', Courier, monospace;">#{{ $transaction_id }}</div>
         </div>
         <div class="meta-row">
             <div class="meta-label">Tanggal</div>
-            <div class="meta-value">{{ $transaction_date }}</div>
+            <div class="meta-value" style="font-family: 'Courier New', Courier, monospace;">{{ $transaction_date }}</div>
         </div>
         <div class="meta-row">
             <div class="meta-label">Kasir</div>
-            <div class="meta-value">{{ $staff_name }}</div>
+            <div class="meta-value" style="font-family: 'Courier New', Courier, monospace;">{{ $staff_name }}</div>
         </div>
     </div>
 
     <!-- Vehicle Details -->
     <div class="section-title">Informasi Kendaraan</div>
-    <div class="meta-grid" style="margin-bottom: 12px;">
+    <div class="meta-grid">
         <div class="meta-row">
             <div class="meta-label">Nama Pelanggan</div>
-            <div class="meta-value">{{ $customer_name }}</div>
+            <div class="meta-value" style="font-family: 'Courier New', Courier, monospace;">{{ $customer_name }}</div>
         </div>
         <div class="meta-row">
             <div class="meta-label">No. Plat Mobil</div>
             <div class="meta-value" style="color: #0f172a; font-weight: bold;">{{ $plate_number }}</div>
-        </div>
-        <div class="meta-row">
-            <div class="meta-label">Tipe/Warna</div>
-            <div class="meta-value">{{ $car_model }} ({{ $car_color }})</div>
         </div>
     </div>
 
     <!-- Services Details -->
     <div class="section-title">Rincian Layanan</div>
     <table class="details-table">
-        <thead>
-            <tr>
-                <th>Item / Deskripsi</th>
-                <th style="text-align: right;">Total</th>
-            </tr>
-        </thead>
         <tbody>
             <tr>
                 <td>
                     <div class="item-name">{{ $product_name }}</div>
                 </td>
-                <td class="item-price">
+                <td class="item-price" style="font-family: 'Courier New', Courier, monospace;">
                     @if($payment_method === 'Voucher' || $payment_method === 'Garansi' || $payment_method === 'Klaim Garansi')
                         Rp 0
                     @else
@@ -228,7 +219,7 @@
     <div class="total-section">
         <div class="total-row">
             <div class="total-label">Subtotal</div>
-            <div class="total-value">
+            <div class="total-value" style="font-family: 'Courier New', Courier, monospace;">
                 @if($payment_method === 'Voucher' || $payment_method === 'Garansi' || $payment_method === 'Klaim Garansi')
                     Rp 0
                 @else
@@ -238,23 +229,12 @@
         </div>
         <div class="total-row">
             <div class="total-label">Metode Pembayaran</div>
-            <div class="total-value">{{ $payment_method }}</div>
+            <div class="total-value" style="font-family: 'Courier New', Courier, monospace;">{{ $payment_method }}</div>
         </div>
-        
-        @if($payment_method === 'Cash' && isset($paid_amount))
-            <div class="total-row">
-                <div class="total-label">Nominal Bayar</div>
-                <div class="total-value">Rp {{ number_format($paid_amount, 0, ',', '.') }}</div>
-            </div>
-            <div class="total-row">
-                <div class="total-label">Kembalian</div>
-                <div class="total-value">Rp {{ number_format($change_amount, 0, ',', '.') }}</div>
-            </div>
-        @endif
 
         <div class="total-row">
-            <div class="total-label grand-total">Grand Total</div>
-            <div class="total-value grand-total">
+            <div class="total-label grand-total" style="font-family: 'Courier New', Courier, monospace;">Grand Total</div>
+            <div class="total-value grand-total" style="font-family: 'Courier New', Courier, monospace;">
                 @if($payment_method === 'Voucher' || $payment_method === 'Garansi' || $payment_method === 'Klaim Garansi')
                     Rp 0
                 @else
@@ -267,8 +247,8 @@
     <!-- Thank You Section -->
     <div class="footer">
         <div class="thanks">Terima kasih atas kunjungan Anda!</div>
-        <p>Struk ini sah dan diterbitkan secara digital.</p>
-        <p>© KURO CAR WASH System</p>
+        <p>Struk ini diterbitkan secara digital.</p>
+        <p>© KURO AUTO CARE</p>
     </div>
 </div>
 

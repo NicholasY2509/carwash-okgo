@@ -147,7 +147,11 @@ const allNavItems = {
             icon: IdCard,
             items: [
                 {
-                    title: "Insentif Staff",
+                    title: "Insentif Staf",
+                    url: "/staff-incentives/summary",
+                },
+                {
+                    title: "Insentif Staf (SPV)",
                     url: "/staff-incentives",
                 },
                 {

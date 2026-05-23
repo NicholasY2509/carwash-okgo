@@ -8,14 +8,20 @@ use Illuminate\Http\Request;
 
 class QueueController extends Controller
 {
-    public function index(){
+    public function index(Request $request){
+        $date = $request->input('date', \Carbon\Carbon::today()->toDateString());
+
         $serviceRecords = ServiceRecord::with('car.carType')
             ->whereIn('queue_status', ['pending', 'ongoing', 'finished'])
+            ->whereDate('created_at', $date)
             ->orderBy('created_at', 'asc')
             ->get();
 
         return Inertia::render('queue/index', [
-            'serviceRecords' => $serviceRecords
+            'serviceRecords' => $serviceRecords,
+            'filters' => [
+                'date' => $date
+            ]
         ]);
     }
 

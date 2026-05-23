@@ -103,4 +103,66 @@ class StaffIncentiveController extends Controller
             ]
         ]);
     }
+
+    public function summary(Request $request)
+    {
+        // Default to today
+        $startDate = $request->input('start_date', Carbon::now()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+
+        $startDateTime = Carbon::parse($startDate)->startOfDay();
+        $endDateTime = Carbon::parse($endDate)->endOfDay();
+
+        $tiers = IncentiveTier::orderBy('min_cars', 'asc')->get();
+
+        $staffReport = Staff::query()
+            ->withCount(['serviceRecords as car_washes_count' => function ($query) use ($startDateTime, $endDateTime) {
+                $query->whereBetween('service_date', [$startDateTime, $endDateTime])
+                      ->where('status', '!=', 'cancelled');
+            }])
+            ->withSum(['serviceRecords as gross_income' => function ($query) use ($startDateTime, $endDateTime) {
+                $query->whereBetween('service_date', [$startDateTime, $endDateTime])
+                      ->where('status', '!=', 'cancelled');
+            }], 'price')
+            ->get();
+
+        $staffReport = $staffReport->map(function ($staff) use ($tiers) {
+            $count = $staff->car_washes_count ?? 0;
+            $grossIncome = (float) ($staff->gross_income ?? 0);
+            $totalIncentive = 0;
+
+            $lowestTier = $tiers->first();
+            $eligible = $lowestTier && ($count >= $lowestTier->min_cars);
+
+            if ($eligible) {
+                $lowerBoundary = 0;
+                foreach ($tiers as $tier) {
+                    $upperBoundary = $tier->max_cars ?? $count;
+                    $carsInTier = max(0, min($count, $upperBoundary) - $lowerBoundary);
+                    $totalIncentive += $carsInTier * $tier->commission;
+                    $lowerBoundary = $upperBoundary;
+                }
+            }
+
+            return [
+                'id' => $staff->id,
+                'full_name' => $staff->full_name,
+                'gross_income' => $grossIncome,
+                'total_incentive' => $totalIncentive,
+            ];
+        });
+
+        // Filter to only those who have incentive
+        $staffReport = $staffReport->filter(function ($staff) {
+            return $staff['total_incentive'] > 0;
+        })->values();
+
+        return Inertia::render('staff_incentives/summary', [
+            'staffReport' => $staffReport,
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        ]);
+    }
 }

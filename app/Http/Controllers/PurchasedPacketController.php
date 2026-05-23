@@ -14,8 +14,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Log;
 use Throwable;
 
 class PurchasedPacketController extends Controller
@@ -161,6 +161,7 @@ class PurchasedPacketController extends Controller
                 'paid_amount' => $request->input('payment_method') === 'Cash' ? $request->input('nominal_pembayaran') : null,
                 'change_amount' => $request->input('payment_method') === 'Cash' ? $request->input('nominal_pembayaran') - $totalPrice : null,
                 'transaction_type' => 'Paket Voucher',
+                'status' => $request->input('payment_method') === 'QRIS' ? 'pending' : 'completed',
             ]);
 
             foreach ($purchasedPackets as $packet) {
@@ -172,6 +173,34 @@ class PurchasedPacketController extends Controller
 
             $sales_transaction->load(['customer', 'car', 'purchasedPackets.voucherPacket', 'purchasedPackets.vouchers:id,serial_number']);
 
+            $midtransResponse = null;
+            if ($request->input('payment_method') === 'QRIS') {
+                $itemsDetails = [
+                    [
+                        'id' => 'pack_' . $voucher_packet->id,
+                        'price' => (float)$voucher_packet->price,
+                        'quantity' => $quantity,
+                        'name' => substr($voucher_packet->name, 0, 50)
+                    ]
+                ];
+
+                $customerDetails = [
+                    'first_name' => substr($customer->name, 0, 50),
+                    'phone' => $customer->phone,
+                ];
+
+                $midtransResponse = \App\Services\MidtransService::generateQris(
+                    'VP-' . $sales_transaction->id . '-' . time(),
+                    (float)$totalPrice,
+                    $itemsDetails,
+                    $customerDetails
+                );
+            }
+
+            if ($midtransResponse) {
+                return redirect()->back()->with('transaction', $sales_transaction)->with('midtrans', $midtransResponse);
+            }
+
             return redirect()->back()->with('transaction', $sales_transaction);
         } catch (Throwable $th) {
             DB::rollBack();
@@ -181,7 +210,7 @@ class PurchasedPacketController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $request->validate([
             'expired_at' => 'required|date',

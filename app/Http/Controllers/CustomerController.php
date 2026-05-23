@@ -26,11 +26,24 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function show(String $id){
-        $customer = Customer::with('cars', 'salesTransactions.staff')->find($id);
+    public function show(Request $request, String $id){
+        $customer = Customer::with('cars.carType')->findOrFail($id);
+        
+        $salesTransactionsQuery = $customer->salesTransactions()->with('staff')->latest();
+        
+        if ($request->filled('start_date')) {
+            $salesTransactionsQuery->whereDate('transaction_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $salesTransactionsQuery->whereDate('transaction_date', '<=', $request->end_date);
+        }
+        
+        $salesTransactions = $salesTransactionsQuery->paginate($request->per_page ?? 10)->withQueryString();
 
         return Inertia::render('customers/show',[
-            'customer' => $customer
+            'customer' => $customer,
+            'salesTransactions' => $salesTransactions,
+            'filters' => $request->only(['start_date', 'end_date'])
         ]);
     }
 
@@ -48,6 +61,42 @@ class CustomerController extends Controller
             ->get();
 
         return response()->json($customers);
+    }
+
+    public function verifyEditPassword(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $setting = \App\Models\Setting::where('key', 'customer_edit_password')->first();
+
+        if (!$setting || empty($setting->value)) {
+            return response()->json(['message' => 'Password not set by administrator.'], 403);
+        }
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $setting->value)) {
+            return response()->json([
+                'errors' => [
+                    'password' => ['Password yang diberikan salah.']
+                ]
+            ], 422);
+        }
+
+        return response()->json(['message' => 'Password verified.']);
+    }
+
+    public function update(Request $request, Customer $customer)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $customer->update($validated);
+
+        return back()->with('success', 'Customer updated successfully.');
     }
 
     public function export()
