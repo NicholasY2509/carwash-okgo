@@ -53,7 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('stock-adjustments', StockAdjustmentController::class)->middleware('permission:stock adjustment');
 
     // Transactions
-    Route::resource('purchased-packets', PurchasedPacketController::class)->except(['create', 'store'])->middleware('permission:packet voucher');
+    Route::resource('purchased-packets', PurchasedPacketController::class)->only(['index', 'update'])->middleware('permission:packet voucher');
     Route::resource('purchased-packets', PurchasedPacketController::class)->only(['create', 'store'])->middleware('permission:purchase packet');
     Route::post('purchased-packets/{id}/cancel', [PurchasedPacketController::class, 'cancel'])->name('purchased-packets.cancel')->middleware('permission:packet voucher');
     

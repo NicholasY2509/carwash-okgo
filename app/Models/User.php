@@ -10,8 +10,11 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable;
+    use HasRoles {
+        hasPermissionTo as traitHasPermissionTo;
+        hasAnyPermission as traitHasAnyPermission;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -57,7 +60,7 @@ class User extends Authenticatable
         if ($this->hasRole('Super Admin')) {
             return true;
         }
-        return parent::hasPermissionTo($permission, $guardName);
+        return $this->traitHasPermissionTo($permission, $guardName);
     }
 
     public function hasAnyPermission(...$permissions): bool
@@ -65,6 +68,6 @@ class User extends Authenticatable
         if ($this->hasRole('Super Admin')) {
             return true;
         }
-        return parent::hasAnyPermission(...$permissions);
+        return $this->traitHasAnyPermission(...$permissions);
     }
 }

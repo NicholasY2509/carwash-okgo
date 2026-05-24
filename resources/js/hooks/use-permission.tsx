@@ -7,12 +7,19 @@ export const usePermission = () => {
     const permissions = auth?.permissions ?? [];
     const roles = auth?.roles ?? [];
 
-    const hasPermission = (name: string): boolean => permissions.includes(name);
+    const isSuperAdmin = roles.includes("Super Admin");
+
+    const hasPermission = (name: string): boolean => {
+        if (isSuperAdmin) return true;
+        return permissions.includes(name);
+    };
 
     const hasRole = (name: string): boolean => roles.includes(name);
 
-    const hasAnyPermission = (names: string[]): boolean =>
-        names.some((name) => permissions.includes(name));
+    const hasAnyPermission = (names: string[]): boolean => {
+        if (isSuperAdmin) return true;
+        return names.some((name) => permissions.includes(name));
+    };
 
     const hasAnyRole = (names: string[]): boolean =>
         names.some((name) => roles.includes(name));
