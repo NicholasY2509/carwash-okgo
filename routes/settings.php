@@ -16,16 +16,20 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
-    Route::get('settings/customer-protection', [\App\Http\Controllers\Settings\CustomerDataProtectionController::class, 'edit'])->name('customer-protection.edit');
-    Route::put('settings/customer-protection', [\App\Http\Controllers\Settings\CustomerDataProtectionController::class, 'update'])->name('customer-protection.update');
+    Route::middleware('permission:setting customer protection')->group(function () {
+        Route::get('settings/customer-protection', [\App\Http\Controllers\Settings\CustomerDataProtectionController::class, 'edit'])->name('customer-protection.edit');
+        Route::put('settings/customer-protection', [\App\Http\Controllers\Settings\CustomerDataProtectionController::class, 'update'])->name('customer-protection.update');
+    });
 
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');
     })->name('appearance');
 
-    Route::get('settings/whatsapp', [WhatsAppSettingsController::class, 'edit'])->name('whatsapp.edit');
-    Route::get('settings/whatsapp/status', [WhatsAppSettingsController::class, 'status'])->name('whatsapp.status');
-    Route::post('settings/whatsapp/initialize', [WhatsAppSettingsController::class, 'initialize'])->name('whatsapp.initialize');
-    Route::get('settings/whatsapp/qr', [WhatsAppSettingsController::class, 'getQR'])->name('whatsapp.qr');
-    Route::post('settings/whatsapp/logout', [WhatsAppSettingsController::class, 'logout'])->name('whatsapp.logout');
+    Route::middleware('permission:setting whatsapp')->group(function () {
+        Route::get('settings/whatsapp', [WhatsAppSettingsController::class, 'edit'])->name('whatsapp.edit');
+        Route::get('settings/whatsapp/status', [WhatsAppSettingsController::class, 'status'])->name('whatsapp.status');
+        Route::post('settings/whatsapp/initialize', [WhatsAppSettingsController::class, 'initialize'])->name('whatsapp.initialize');
+        Route::get('settings/whatsapp/qr', [WhatsAppSettingsController::class, 'getQR'])->name('whatsapp.qr');
+        Route::post('settings/whatsapp/logout', [WhatsAppSettingsController::class, 'logout'])->name('whatsapp.logout');
+    });
 });

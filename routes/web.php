@@ -31,7 +31,6 @@ use App\Http\Controllers\QueueController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
-
 Route::get('/', function () {
     return to_route('dashboard');
 })->name('home');
@@ -43,9 +42,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('dashboard/generate-excel-report', 'generateExcelReport')->name('dashboard.generate-excel-report');
     });
 
-    Route::get('/staffs/meta', [StaffController::class, 'meta'])->name('staffs.meta');
+    // Products & Parties
+    Route::resource('products', ProductController::class)->middleware('permission:product');
+    Route::resource('parties', PartyController::class)->middleware('permission:party');
 
-    Route::controller(VoucherController::class)->group(function () {
+    // Stock & Barang
+    Route::resource('items', ItemController::class)->middleware('permission:item');
+    Route::resource('suppliers', SupplierController::class)->middleware('permission:supplier');
+    Route::resource('purchases', PurchaseController::class)->middleware('permission:purchase');
+    Route::resource('stock-adjustments', StockAdjustmentController::class)->middleware('permission:stock adjustment');
+
+    // Transactions
+    Route::resource('purchased-packets', PurchasedPacketController::class)->except(['create', 'store'])->middleware('permission:packet voucher');
+    Route::resource('purchased-packets', PurchasedPacketController::class)->only(['create', 'store'])->middleware('permission:purchase packet');
+    Route::post('purchased-packets/{id}/cancel', [PurchasedPacketController::class, 'cancel'])->name('purchased-packets.cancel')->middleware('permission:packet voucher');
+    
+    Route::resource('car-washes', CarWashController::class)->middleware('permission:car wash');
+    Route::post('car-washes/{id}/cancel', [CarWashController::class, 'cancel'])->name('car-washes.cancel')->middleware('permission:car wash');
+    Route::controller(CarWashController::class)->middleware('permission:car wash')->group(function () {
+        Route::post('car-washes/voucher', 'voucherPayment')->name('car-washes.voucher');
+        Route::post('car-washes/return', 'returnPayment')->name('car-washes.return');
+        Route::post('car-washes/special-program', 'specialProgramPayment')->name('car-washes.special-program');
+    });
+
+    Route::resource('sales-transactions', SalesTransactionController::class)->middleware('permission:sales transaction');
+
+    // Customers
+    Route::resource('customers', CustomerController::class)->middleware('permission:customer');
+    Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export')->middleware('permission:customer');
+    Route::post('customers/verify-edit-password', [CustomerController::class, 'verifyEditPassword'])->name('customers.verify-edit-password')->middleware('permission:customer');
+    
+    Route::resource('cars', CarController::class)->middleware('permission:car');
+    Route::post('cars/verify-edit-password', [CarController::class, 'verifyEditPassword'])->name('cars.verify-edit-password')->middleware('permission:car');
+    Route::resource('car-types', CarTypeController::class)->middleware('permission:car type');
+
+    // Stalls (commented out in sidebar, keeping without permissions or with tentative ones)
+    Route::resource('stalls', StallController::class);
+    Route::resource('stall-assignments', StallAssignmentController::class);
+    Route::post('set-stall-head', [StallAssignmentController::class, 'setStallHead'])->name('stall-assignments.set-stall-head');
+
+    // Staff
+    Route::resource('staffs', StaffController::class)->middleware('permission:staff');
+    Route::get('/staffs/meta', [StaffController::class, 'meta'])->name('staffs.meta')->middleware('permission:staff');
+    Route::resource('work-positions', WorkPositionController::class)->middleware('permission:work position');
+    Route::controller(StaffPerformanceController::class)->group(function () {
+        Route::get('staff-performances', 'index')->name('staff-performances.index');
+    });
+    Route::controller(\App\Http\Controllers\StaffIncentiveController::class)->group(function () {
+        Route::get('staff-incentives/summary', 'summary')->name('staff-incentives.summary')->middleware('permission:staff incentive summary');
+        Route::get('staff-incentives', 'index')->name('staff-incentives.index')->middleware('permission:staff incentive');
+    });
+
+    // Queue
+    Route::controller(QueueController::class)->middleware('permission:queue')->group(function () {
+        Route::get('queue', 'index')->name('queue.index');
+        Route::post('queue/{id}/status', 'updateStatus')->name('queue.update-status');
+    });
+
+    // Reports
+    Route::prefix('reports')->group(function () {
+        Route::get('car-wash-revenue', [CarWashRevenueReportController::class, 'index'])->name('reports.car-wash-revenue')->middleware('permission:report car wash');
+        Route::get('voucher-sales', [VoucherSalesReportController::class, 'index'])->name('reports.voucher-sales')->middleware('permission:report voucher sales');
+        Route::get('stock', [StockReportController::class, 'index'])->name('reports.stock')->middleware('permission:report stock');
+        Route::get('split-profit', [\App\Http\Controllers\Reports\SplitProfitReportController::class, 'index'])->name('reports.split-profit')->middleware('permission:report split profit');
+    });
+
+    // Vouchers
+    Route::resource('vouchers', VoucherController::class)->middleware('permission:voucher');
+    Route::controller(VoucherController::class)->middleware('permission:voucher')->group(function () {
         Route::get('vouchers/serials', 'getAllSerialNumbers')->name('vouchers.serials');
         Route::get('vouchers/search', 'searchJson')->name('vouchers.search');
         Route::post('vouchers/batch-update', 'batchUpdate')->name('vouchers.batch_update');
@@ -53,70 +117,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('vouchers/update-expiration', 'updateExpiration')->name('vouchers.update-expiration');
         Route::get('vouchers/print-barcodes', 'printBarcodes')->name('vouchers.print-barcodes');
     });
+    Route::resource('voucher-types', VoucherTypeController::class)->middleware('permission:voucher type');
+    Route::resource('voucher-packets', VoucherPacketController::class)->middleware('permission:voucher packet');
 
-    Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
-    Route::post('customers/verify-edit-password', [CustomerController::class, 'verifyEditPassword'])->name('customers.verify-edit-password');
-    Route::post('cars/verify-edit-password', [CarController::class, 'verifyEditPassword'])->name('cars.verify-edit-password');
-    Route::post('car-washes/{id}/cancel', [CarWashController::class, 'cancel'])->name('car-washes.cancel');
-    Route::post('purchased-packets/{id}/cancel', [PurchasedPacketController::class, 'cancel'])->name('purchased-packets.cancel');
-
-    Route::resources([
-        'car-washes'        => CarWashController::class,
-        'stalls'            => StallController::class,
-        'stall-assignments' => StallAssignmentController::class,
-        'work-positions'    => WorkPositionController::class,
-        'users'             => UserController::class,
-        'staffs'            => StaffController::class,
-        'vouchers'          => VoucherController::class,
-        'voucher-types'     => VoucherTypeController::class,
-        'voucher-packets'   => VoucherPacketController::class,
-        'purchased-packets' => PurchasedPacketController::class,
-        'customers'         => CustomerController::class,
-        'cars'              => CarController::class,
-        'products'          => ProductController::class,
-        'parties'           => PartyController::class,
-        'roles'             => RoleController::class,
-        'permissions'       => PermissionController::class,
-        'sales-transactions'=> SalesTransactionController::class,
-        'car-types'         => CarTypeController::class,
-        'settings/incentive-tiers' => \App\Http\Controllers\Settings\IncentiveTierController::class,
-        'items'             => ItemController::class,
-        'purchases'         => PurchaseController::class,
-        'stock-adjustments' => StockAdjustmentController::class,
-        'suppliers'         => SupplierController::class,
-    ]);
-
-    Route::controller(StallAssignmentController::class)->group(function () {
-        Route::post('set-stall-head', 'setStallHead')->name('stall-assignments.set-stall-head');
-    });
-
-    Route::controller(CarWashController::class)->group(function () {
-        Route::post('car-washes/voucher', 'voucherPayment')->name('car-washes.voucher');
-        Route::post('car-washes/return', 'returnPayment')->name('car-washes.return');
-        Route::post('car-washes/special-program', 'specialProgramPayment')->name('car-washes.special-program');
-    });
-
-    Route::controller(StaffPerformanceController::class)->group(function () {
-        Route::get('staff-performances', 'index')->name('staff-performances.index');
-    });
-
-    Route::controller(\App\Http\Controllers\StaffIncentiveController::class)->group(function () {
-        Route::get('staff-incentives/summary', 'summary')->name('staff-incentives.summary');
-        Route::get('staff-incentives', 'index')->name('staff-incentives.index');
-    });
-
-    Route::controller(QueueController::class)->group(function () {
-        Route::get('queue', 'index')->name('queue.index');
-        Route::post('queue/{id}/status', 'updateStatus')->name('queue.update-status');
-    });
-
-    // Report Routes
-    Route::prefix('reports')->group(function () {
-        Route::get('car-wash-revenue', [CarWashRevenueReportController::class, 'index'])->name('reports.car-wash-revenue');
-        Route::get('voucher-sales', [VoucherSalesReportController::class, 'index'])->name('reports.voucher-sales');
-        Route::get('stock', [StockReportController::class, 'index'])->name('reports.stock');
-        Route::get('split-profit', [\App\Http\Controllers\Reports\SplitProfitReportController::class, 'index'])->name('reports.split-profit');
-    });
+    // Settings
+    Route::resource('users', UserController::class)->middleware('permission:user');
+    Route::resource('roles', RoleController::class)->middleware('permission:role');
+    Route::resource('permissions', PermissionController::class)->middleware('permission:permission');
+    Route::resource('settings/incentive-tiers', \App\Http\Controllers\Settings\IncentiveTierController::class)->middleware('permission:incentive tier');
 });
 
 require __DIR__ . '/settings.php';
