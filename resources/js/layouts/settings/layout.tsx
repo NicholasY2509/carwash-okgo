@@ -22,11 +22,7 @@ const sidebarNavItems: NavItem[] = [
         href: "/settings/appearance",
         icon: null,
     },
-    {
-        title: "Customer Protection",
-        href: "/settings/customer-protection",
-        icon: null,
-    },
+
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

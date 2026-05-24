@@ -228,6 +228,10 @@ const allNavItems = {
                     title: "Pengaturan Whatsapp",
                     url: "/settings/whatsapp",
                 },
+                {
+                    title: "Customer Protection",
+                    url: "/settings/customer-protection",
+                },
             ],
         },
     ],
