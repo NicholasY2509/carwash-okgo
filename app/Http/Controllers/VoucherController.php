@@ -385,4 +385,32 @@ class VoucherController extends Controller
 
         return Excel::download(new VouchersReportExport($startDate, $endDate, $voucher_type), 'vouchers-report.xlsx');
     }
+
+    public function printBarcodes(Request $request)
+    {
+        $request->validate([
+            'start_serial' => 'required|string',
+            'end_serial' => 'required|string',
+            'format' => 'required|in:pdf,excel',
+        ]);
+
+        $startSerial = $request->input('start_serial');
+        $endSerial = $request->input('end_serial');
+        $format = $request->input('format');
+
+        $vouchers = Voucher::whereBetween('serial_number', [$startSerial, $endSerial])
+            ->orderBy('serial_number', 'asc')
+            ->get();
+
+        if ($vouchers->isEmpty()) {
+            return back()->withErrors(['message' => 'Tidak ada voucher ditemukan pada rentang tersebut.']);
+        }
+
+        if ($format === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('vouchers.barcodes_pdf', compact('vouchers'));
+            return $pdf->download('vouchers-barcodes.pdf');
+        } else {
+            return Excel::download(new \App\Exports\VouchersBarcodeExport($vouchers), 'vouchers-barcodes.xlsx');
+        }
+    }
 }

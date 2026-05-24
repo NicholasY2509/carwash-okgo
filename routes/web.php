@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('vouchers/batch-update', 'batchUpdate')->name('vouchers.batch_update');
         Route::post('vouchers/generate-report', 'generateReport')->name('vouchers.generate-report');
         Route::post('vouchers/update-expiration', 'updateExpiration')->name('vouchers.update-expiration');
+        Route::get('vouchers/print-barcodes', 'printBarcodes')->name('vouchers.print-barcodes');
     });
 
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');

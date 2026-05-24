@@ -16,7 +16,7 @@ import { Head, usePage, router } from "@inertiajs/react";
 import { Pagination } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Plus, Filter, X, Search, Calendar, CheckSquare } from "lucide-react";
+import { Plus, Filter, X, Search, Calendar, CheckSquare, Printer } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import CreateVoucher from "./forms/create-voucher";
@@ -389,6 +389,82 @@ function BatchEditExpiryModal({ open, onClose, voucherTypes }: BatchEditExpiryPr
 
 
 
+// ─── Print Barcode Modal ──────────────────────────────────────────────────────
+interface PrintBarcodeModalProps {
+    open: boolean;
+    onClose: () => void;
+}
+
+function PrintBarcodeModal({ open, onClose }: PrintBarcodeModalProps) {
+    const [startSerial, setStartSerial] = useState("");
+    const [endSerial, setEndSerial] = useState("");
+    const [format, setFormat] = useState("pdf");
+
+    const handlePrint = () => {
+        if (!startSerial || !endSerial) {
+            toast.error("Silakan isi rentang nomor seri");
+            return;
+        }
+
+        const url = route("vouchers.print-barcodes", {
+            start_serial: startSerial,
+            end_serial: endSerial,
+            format: format,
+        });
+
+        window.open(url, "_blank");
+        onClose();
+    };
+
+    if (!open) return null;
+
+    return (
+        <Modal open={open} onClose={onClose} className="max-w-md">
+            <ModalHeader title="Print Barcode Voucher" />
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="start-serial">Dari Nomor Seri</Label>
+                        <Input
+                            id="start-serial"
+                            placeholder="Contoh: V001"
+                            value={startSerial}
+                            onChange={(e) => setStartSerial(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="end-serial">Sampai Nomor Seri</Label>
+                        <Input
+                            id="end-serial"
+                            placeholder="Contoh: V100"
+                            value={endSerial}
+                            onChange={(e) => setEndSerial(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="print-format">Format Print</Label>
+                    <Select value={format} onValueChange={setFormat}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Pilih Format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="pdf">PDF (Grid 3x4 per halaman)</SelectItem>
+                            <SelectItem value="excel">Excel</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="outline" onClick={onClose}>Batal</Button>
+                    <Button onClick={handlePrint}>Print / Export</Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VoucherIndex() {
     const { props } = usePage<
@@ -408,6 +484,7 @@ export default function VoucherIndex() {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isSingleExpiryOpen, setIsSingleExpiryOpen] = useState(false);
     const [isBatchExpiryOpen, setIsBatchExpiryOpen] = useState(false);
+    const [isPrintBarcodeOpen, setIsPrintBarcodeOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<VoucherProp | null>(null);
 
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
@@ -599,6 +676,13 @@ export default function VoucherIndex() {
                             <Calendar className="mr-2 h-4 w-4" />
                             Edit Kadaluarsa
                         </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsPrintBarcodeOpen(true)}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
+                            Print Barcode
+                        </Button>
                         <Button variant="default" onClick={() => setIsReportModalOpen(true)}>
                             Tarik Laporan
                         </Button>
@@ -735,6 +819,12 @@ export default function VoucherIndex() {
                 open={isBatchExpiryOpen}
                 onClose={() => setIsBatchExpiryOpen(false)}
                 voucherTypes={voucher_types}
+            />
+
+            {/* Print Barcode Modal */}
+            <PrintBarcodeModal
+                open={isPrintBarcodeOpen}
+                onClose={() => setIsPrintBarcodeOpen(false)}
             />
 
             {/* Report Modal */}
