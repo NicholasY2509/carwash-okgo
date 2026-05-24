@@ -1,6 +1,5 @@
 import InputError from "@/components/input-error";
 import AppLayout from "@/layouts/app-layout";
-import SettingsLayout from "@/layouts/settings/layout";
 import { type BreadcrumbItem } from "@/types";
 import { Transition } from "@headlessui/react";
 import { Head, useForm } from "@inertiajs/react";
@@ -64,7 +63,7 @@ export default function CustomerProtection({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Customer Data Protection" />
 
-            <SettingsLayout>
+            <div className="max-w-3xl space-y-6 p-4 sm:p-8">
                 <div className="space-y-6">
                     <HeadingSmall
                         title="Customer Data Edit Password"
@@ -159,7 +158,7 @@ export default function CustomerProtection({
                         </div>
                     </form>
                 </div>
-            </SettingsLayout>
+            </div>
         </AppLayout>
     );
 }
