@@ -213,6 +213,7 @@ export default function CarWashCreate() {
                     <CreateVoucherPurchase
                         ref={formRef as any}
                         onSuccess={() => setIsSheetOpen(false)}
+                        carTypes={props.car_types || []}
                         items={props.items || []}
                         selectedProduct={selectedProduct}
                         selectedItems={selectedItemIds}

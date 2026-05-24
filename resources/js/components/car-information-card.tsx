@@ -7,6 +7,10 @@ interface Car {
     model: string;
     color: string;
     photo: string;
+    car_type?: {
+        id: number;
+        name: string;
+    };
 }
 
 interface Customer {
@@ -41,16 +45,10 @@ export function CarInformationCard({
                     </div>
                     <div>
                         <span className="text-sm text-muted-foreground">
-                            Model:
-                        </span>
-                        <div className="font-medium">{car.model}</div>
-                    </div>
-                    <div>
-                        <span className="text-sm text-muted-foreground">
-                            Warna:
+                            Tipe Mobil:
                         </span>
                         <div className="font-medium">
-                            {car.color || "Tidak diketahui"}
+                            {car.car_type?.name || "Tidak diketahui"}
                         </div>
                     </div>
                 </div>

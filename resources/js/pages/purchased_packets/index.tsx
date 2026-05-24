@@ -81,7 +81,7 @@ function EditExpirationDateDialog({
 }) {
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState(
-        currentDate ? format(new Date(currentDate), "yyyy-MM-dd") : ""
+        currentDate ? format(new Date(currentDate), "yyyy-MM-dd") : "",
     );
     const [loading, setLoading] = useState(false);
 
@@ -100,7 +100,7 @@ function EditExpirationDateDialog({
                     toast.error("Gagal memperbarui tanggal kedaluwarsa");
                 },
                 onFinish: () => setLoading(false),
-            }
+            },
         );
     };
 
@@ -130,7 +130,11 @@ function EditExpirationDateDialog({
                         />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
                             Batal
                         </Button>
                         <Button type="submit" disabled={loading}>
@@ -143,7 +147,11 @@ function EditExpirationDateDialog({
     );
 }
 
-function CancelConfirmDialog({ transaction }: { transaction: SalesTransactionRow }) {
+function CancelConfirmDialog({
+    transaction,
+}: {
+    transaction: SalesTransactionRow;
+}) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -171,10 +179,15 @@ function CancelConfirmDialog({ transaction }: { transaction: SalesTransactionRow
             route("purchased-packets.cancel", transaction.id),
             {},
             {
-                onSuccess: () => { setOpen(false); toast.success("Transaksi berhasil dibatalkan"); },
-                onError: () => { toast.error("Gagal membatalkan transaksi"); },
+                onSuccess: () => {
+                    setOpen(false);
+                    toast.success("Transaksi berhasil dibatalkan");
+                },
+                onError: () => {
+                    toast.error("Gagal membatalkan transaksi");
+                },
                 onFinish: () => setLoading(false),
-            }
+            },
         );
     };
 
@@ -193,39 +206,65 @@ function CancelConfirmDialog({ transaction }: { transaction: SalesTransactionRow
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-[440px]">
                     <DialogHeader>
-                        <DialogTitle className="text-red-600">Batalkan Transaksi?</DialogTitle>
+                        <DialogTitle className="text-red-600">
+                            Batalkan Transaksi?
+                        </DialogTitle>
                         <DialogDescription>
-                            Tindakan ini akan menandai transaksi dan semua paket terkait sebagai <strong>dibatalkan</strong>. Tindakan ini tidak dapat diurungkan.
+                            Tindakan ini akan menandai transaksi dan semua paket
+                            terkait sebagai <strong>dibatalkan</strong>.
+                            Tindakan ini tidak dapat diurungkan.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="rounded-lg border p-4 space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Customer</span>
-                            <span className="font-medium">{transaction.customer?.name ?? "-"}</span>
+                            <span className="text-muted-foreground">
+                                Customer
+                            </span>
+                            <span className="font-medium">
+                                {transaction.customer?.name ?? "-"}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Plat Nomor</span>
-                            <span className="font-medium">{transaction.car?.plate_number ?? "-"}</span>
+                            <span className="text-muted-foreground">
+                                Plat Nomor
+                            </span>
+                            <span className="font-medium">
+                                {transaction.car?.plate_number ?? "-"}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Nama Paket</span>
+                            <span className="text-muted-foreground">
+                                Nama Paket
+                            </span>
                             <span className="font-medium">{packetName}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Tanggal</span>
+                            <span className="text-muted-foreground">
+                                Tanggal
+                            </span>
                             <span className="font-medium">{formattedDate}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Total</span>
-                            <span className="font-semibold">{formattedTotal}</span>
+                            <span className="font-semibold">
+                                {formattedTotal}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Metode Pembayaran</span>
-                            <span className="font-medium">{transaction.payment_method}</span>
+                            <span className="text-muted-foreground">
+                                Metode Pembayaran
+                            </span>
+                            <span className="font-medium">
+                                {transaction.payment_method}
+                            </span>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={loading}
+                        >
                             Kembali
                         </Button>
                         <Button
@@ -233,7 +272,9 @@ function CancelConfirmDialog({ transaction }: { transaction: SalesTransactionRow
                             onClick={handleConfirm}
                             disabled={loading}
                         >
-                            {loading ? "Membatalkan..." : "Konfirmasi Pembatalan"}
+                            {loading
+                                ? "Membatalkan..."
+                                : "Konfirmasi Pembatalan"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -259,17 +300,27 @@ function PurchasedPacketDetails({ row }: { row: Row<SalesTransactionRow> }) {
         <div className="p-4 space-y-4 bg-muted/50">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <div>
-                    <Label className="text-sm font-semibold">Tanggal Berlaku</Label>
+                    <Label className="text-sm font-semibold">
+                        Tanggal Berlaku
+                    </Label>
                     <p className="text-lg font-medium">
-                        {format(new Date(firstPacket.purchased_at), "dd MMMM yyyy")}
+                        {format(
+                            new Date(firstPacket.purchased_at),
+                            "dd MMMM yyyy",
+                        )}
                     </p>
                 </div>
 
                 <div>
-                    <Label className="text-sm font-semibold">Tanggal Kedaluwarsa</Label>
+                    <Label className="text-sm font-semibold">
+                        Tanggal Kedaluwarsa
+                    </Label>
                     <div className="flex items-center">
                         <p className="text-lg font-medium">
-                            {format(new Date(firstPacket.expired_at), "dd MMMM yyyy")}
+                            {format(
+                                new Date(firstPacket.expired_at),
+                                "dd MMMM yyyy",
+                            )}
                         </p>
                         <EditExpirationDateDialog
                             purchasedPacketId={firstPacket.id}
@@ -283,28 +334,48 @@ function PurchasedPacketDetails({ row }: { row: Row<SalesTransactionRow> }) {
                 <Label className="text-sm font-semibold">Detail Voucher</Label>
                 <div className="mt-2 space-y-3">
                     {purchased_packets.map((packet) => (
-                        <div key={packet.id} className="p-3 border rounded-md bg-white">
+                        <div
+                            key={packet.id}
+                            className="p-3 border rounded-md bg-white"
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-medium text-base">
-                                        {packet.voucher_packet?.name || "Nama Paket Tidak Tersedia"}
+                                        {packet.voucher_packet?.name ||
+                                            "Nama Paket Tidak Tersedia"}
                                     </p>
-                                    {packet.vouchers && Array.isArray(packet.vouchers) && packet.vouchers.length > 0 ? (
+                                    {packet.vouchers &&
+                                    Array.isArray(packet.vouchers) &&
+                                    packet.vouchers.length > 0 ? (
                                         <>
-                                            <p className="text-sm text-muted-foreground mt-1">Nomor Seri Voucher:</p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Nomor Seri Voucher:
+                                            </p>
                                             <p className="font-mono text-base font-semibold tracking-wider">
-                                                {packet.vouchers.map((voucher) => voucher.serial_number).join(", ")}
+                                                {packet.vouchers
+                                                    .map(
+                                                        (voucher) =>
+                                                            voucher.serial_number,
+                                                    )
+                                                    .join(", ")}
                                             </p>
                                         </>
                                     ) : (
                                         <p className="text-sm text-muted-foreground mt-1">
-                                            Voucher akan ditugaskan saat digunakan (Assign on Sale: false)
+                                            Voucher akan ditugaskan saat
+                                            digunakan (Assign on Sale: false)
                                         </p>
                                     )}
                                 </div>
                                 {packet.id !== firstPacket.id && (
                                     <div className="flex flex-col items-end">
-                                        <p className="text-xs text-muted-foreground">Exp: {format(new Date(packet.expired_at), "dd MMM yyyy")}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Exp:{" "}
+                                            {format(
+                                                new Date(packet.expired_at),
+                                                "dd MMM yyyy",
+                                            )}
+                                        </p>
                                         <EditExpirationDateDialog
                                             purchasedPacketId={packet.id}
                                             currentDate={packet.expired_at}
@@ -323,7 +394,12 @@ function PurchasedPacketDetails({ row }: { row: Row<SalesTransactionRow> }) {
 export default function PurchasedPacketIndex() {
     const { hasPermission } = usePermission();
     const { props } = usePage<PageProps<{ salesTransactions: any }>>();
-    const pagination = props.salesTransactions || { data: [], per_page: 10, current_page: 1, last_page: 1 };
+    const pagination = props.salesTransactions || {
+        data: [],
+        per_page: 10,
+        current_page: 1,
+        last_page: 1,
+    };
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -402,8 +478,9 @@ export default function PurchasedPacketIndex() {
             header: "Nama Paket",
             cell: ({ row }) =>
                 Array.isArray(row.original.purchased_packets) &&
-                    row.original.purchased_packets.length > 0
-                    ? row.original.purchased_packets[0].voucher_packet?.name || ""
+                row.original.purchased_packets.length > 0
+                    ? row.original.purchased_packets[0].voucher_packet?.name ||
+                      ""
                     : "",
         },
         {
@@ -428,7 +505,10 @@ export default function PurchasedPacketIndex() {
                     );
                 }
                 return (
-                    <Badge variant="outline" className="text-xs text-green-700 border-green-300 bg-green-50">
+                    <Badge
+                        variant="outline"
+                        className="text-xs text-green-700 border-green-300 bg-green-50"
+                    >
                         Aktif
                     </Badge>
                 );
@@ -442,9 +522,12 @@ export default function PurchasedPacketIndex() {
 
                 return (
                     <div className="flex items-center gap-1">
-                        {transaction.status !== "cancelled" && hasPermission("cancel transactions") && (
-                            <CancelConfirmDialog transaction={transaction} />
-                        )}
+                        {transaction.status !== "cancelled" &&
+                            hasPermission("cancel transactions") && (
+                                <CancelConfirmDialog
+                                    transaction={transaction}
+                                />
+                            )}
                     </div>
                 );
             },
@@ -494,7 +577,9 @@ export default function PurchasedPacketIndex() {
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                            <span className="text-sm text-muted-foreground">
+                                Baris per halaman:
+                            </span>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -509,7 +594,9 @@ export default function PurchasedPacketIndex() {
                                     {[5, 10, 20, 50, 100].map((size) => (
                                         <DropdownMenuItem
                                             key={size}
-                                            onSelect={() => handlePerPageChange(size)}
+                                            onSelect={() =>
+                                                handlePerPageChange(size)
+                                            }
                                         >
                                             {size}
                                         </DropdownMenuItem>
