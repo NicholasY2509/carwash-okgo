@@ -82,8 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('set-stall-head', [StallAssignmentController::class, 'setStallHead'])->name('stall-assignments.set-stall-head');
 
     // Staff
-    Route::resource('staffs', StaffController::class)->middleware('permission:staff');
     Route::get('/staffs/meta', [StaffController::class, 'meta'])->name('staffs.meta')->middleware('permission:staff');
+    Route::resource('staffs', StaffController::class)->middleware('permission:staff');
     Route::resource('work-positions', WorkPositionController::class)->middleware('permission:work position');
     Route::controller(StaffPerformanceController::class)->group(function () {
         Route::get('staff-performances', 'index')->name('staff-performances.index');
