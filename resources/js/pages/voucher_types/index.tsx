@@ -39,6 +39,7 @@ export default function VoucherTypeIndex() {
             cell: (row) => row.row.index + 1,
         },
         { accessorKey: "name", header: "Name" },
+        { accessorKey: "voucher_suffix", header: "Suffix" },
         { accessorKey: "description", header: "Description" },
         {
             accessorKey: "is_free",
