@@ -268,7 +268,7 @@ export default function CashierIncentivesIndex() {
                                 <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl xl:text-3xlt-2xl xl:tex font-extrabold text-emerald-600 dark:text-emerald-400">
+                                <div className="text-2xl xl:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
                                     {formatToIDR(totalIncentive)}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
