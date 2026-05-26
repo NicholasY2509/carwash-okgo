@@ -28,6 +28,7 @@ class VoucherTypeController extends Controller
             $voucher_type->description = $request->description;
             $voucher_type->is_free = $request->is_free;
             $voucher_type->only_one_car = $request->only_one_car == 'on' ? false : true;
+            $voucher_type->voucher_suffix = $request->voucher_suffix;
             $voucher_type->save();
 
             DB::commit();
@@ -48,6 +49,7 @@ class VoucherTypeController extends Controller
             $voucher_type->description = $request->description;
             $voucher_type->is_free = $request->is_free;
             $voucher_type->only_one_car = $request->only_one_car == 'on' ? false : true;
+            $voucher_type->voucher_suffix = $request->voucher_suffix;
             $voucher_type->save();
 
             DB::commit();

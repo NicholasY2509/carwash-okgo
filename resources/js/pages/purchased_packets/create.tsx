@@ -55,6 +55,7 @@ interface VoucherPackageProp {
     valid_period_months: number;
     has_unlimited_issuance: boolean;
     assign_on_sale: boolean;
+    autogenerate_vouchers: boolean;
     description: string;
 }
 
@@ -138,6 +139,7 @@ export default function CreatePurchasedPacket() {
         }
         if (
             selectedVoucherPacket?.assign_on_sale &&
+            !selectedVoucherPacket?.autogenerate_vouchers &&
             selectedVoucherIds.length !== requiredVoucherCount
         ) {
             setFooterError(
@@ -229,7 +231,10 @@ export default function CreatePurchasedPacket() {
 
             <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
                 {selectedVoucherPacket && (
-                    <SheetContent side="bottom" className="flex flex-col h-screen w-screen sm:max-w-none border-none p-0">
+                    <SheetContent
+                        side="bottom"
+                        className="flex flex-col h-screen w-screen sm:max-w-none border-none p-0"
+                    >
                         <SheetHeader className="px-6 py-4 border-b">
                             <SheetTitle>
                                 {selectedVoucherPacket.name}
@@ -272,9 +277,7 @@ export default function CreatePurchasedPacket() {
                                             variant="outline"
                                             size="icon"
                                             onClick={() =>
-                                                setQuantity(
-                                                    (q) => q + 1,
-                                                )
+                                                setQuantity((q) => q + 1)
                                             }
                                         >
                                             +
@@ -283,48 +286,85 @@ export default function CreatePurchasedPacket() {
                                 </div>
 
                                 <div className="space-y-3">
-                                    <Label required className="text-base">Metode Pembayaran</Label>
+                                    <Label required className="text-base">
+                                        Metode Pembayaran
+                                    </Label>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {[
-                                            { value: "Cash", label: "Cash", icon: Banknote },
-                                            { value: "Debit/Credit", label: "Card", icon: CreditCard },
-                                            { value: "Transfer", label: "Transfer", icon: Landmark },
-                                            { value: "QRIS", label: "QRIS", icon: QrCode },
+                                            {
+                                                value: "Cash",
+                                                label: "Cash",
+                                                icon: Banknote,
+                                            },
+                                            {
+                                                value: "Debit/Credit",
+                                                label: "Card",
+                                                icon: CreditCard,
+                                            },
+                                            {
+                                                value: "Transfer",
+                                                label: "Transfer",
+                                                icon: Landmark,
+                                            },
+                                            {
+                                                value: "QRIS",
+                                                label: "QRIS",
+                                                icon: QrCode,
+                                            },
                                         ].map((method) => {
-                                            const isSelected = selectedMetodePembayaran === method.value;
+                                            const isSelected =
+                                                selectedMetodePembayaran ===
+                                                method.value;
                                             const IconComponent = method.icon;
                                             return (
                                                 <button
                                                     key={method.value}
                                                     type="button"
-                                                    onClick={() => setSelectedMetodePembayaran(method.value)}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${isSelected
-                                                        ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm font-semibold"
-                                                        : "border-muted bg-card hover:bg-accent text-card-foreground"
-                                                        }`}
+                                                    onClick={() =>
+                                                        setSelectedMetodePembayaran(
+                                                            method.value,
+                                                        )
+                                                    }
+                                                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${
+                                                        isSelected
+                                                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm font-semibold"
+                                                            : "border-muted bg-card hover:bg-accent text-card-foreground"
+                                                    }`}
                                                 >
-                                                    <IconComponent className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`} />
-                                                    <span className="text-sm">{method.label}</span>
+                                                    <IconComponent
+                                                        className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`}
+                                                    />
+                                                    <span className="text-sm">
+                                                        {method.label}
+                                                    </span>
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
 
-
-                                {!!selectedVoucherPacket.assign_on_sale && (
+                                {!!selectedVoucherPacket.assign_on_sale &&
+                                    !selectedVoucherPacket.autogenerate_vouchers && (
+                                        <div className="pt-2">
+                                            <Button
+                                                variant="secondary"
+                                                className="w-full sm:w-auto"
+                                                onClick={() =>
+                                                    setAlertOpen(true)
+                                                }
+                                            >
+                                                Pilih Voucher (
+                                                {selectedVoucherIds.length}/
+                                                {requiredVoucherCount})
+                                            </Button>
+                                        </div>
+                                    )}
+                                {!!selectedVoucherPacket.autogenerate_vouchers && (
                                     <div className="pt-2">
-                                        <Button
-                                            variant="secondary"
-                                            className="w-full sm:w-auto"
-                                            onClick={() =>
-                                                setAlertOpen(true)
-                                            }
-                                        >
-                                            Pilih Voucher (
-                                            {selectedVoucherIds.length}/
-                                            {requiredVoucherCount})
-                                        </Button>
+                                        <p className="text-sm text-muted-foreground italic">
+                                            Voucher akan otomatis ter-generate
+                                            setelah pembayaran berhasil.
+                                        </p>
                                     </div>
                                 )}
                             </div>

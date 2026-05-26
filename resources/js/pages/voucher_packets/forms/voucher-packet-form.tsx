@@ -42,6 +42,7 @@ interface VoucherPacket {
     voucher_type_id: number;
     description: string;
     expired_date?: string;
+    autogenerate_vouchers: boolean;
 }
 
 interface CreateVoucherPacketProps {
@@ -68,6 +69,7 @@ const VoucherPacketForm = forwardRef<
         until_year_end: voucherPacket?.until_year_end ?? false,
         has_unlimited_issuance: voucherPacket?.has_unlimited_issuance ?? false,
         assign_on_sale: voucherPacket?.assign_on_sale ?? false,
+        autogenerate_vouchers: voucherPacket?.autogenerate_vouchers ?? false,
         voucher_type_id: voucherPacket?.voucher_type_id.toString() ?? "",
         description: voucherPacket?.description ?? "",
         expired_date: voucherPacket?.expired_date ?? "",
@@ -87,7 +89,8 @@ const VoucherPacketForm = forwardRef<
         const handleSuccess = () => {
             reset();
             toast.success(
-                `Packet voucher telah berhasil ${isEditMode ? "diperbarui" : "ditambahkan"
+                `Packet voucher telah berhasil ${
+                    isEditMode ? "diperbarui" : "ditambahkan"
                 }.`,
             );
             onSuccess();
@@ -96,7 +99,7 @@ const VoucherPacketForm = forwardRef<
         if (isEditMode) {
             patch(route("voucher-packets.update", voucherPacket?.id || ""), {
                 onSuccess: handleSuccess,
-                onError: () => { },
+                onError: () => {},
             });
             return;
         } else {
@@ -314,6 +317,30 @@ const VoucherPacketForm = forwardRef<
                 {errors.has_unlimited_issuance && (
                     <p className="text-sm text-red-600">
                         {errors.has_unlimited_issuance}
+                    </p>
+                )}
+                <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                        id="autogenerate_vouchers"
+                        checked={data.autogenerate_vouchers}
+                        onCheckedChange={(checked) =>
+                            setData("autogenerate_vouchers", !!checked)
+                        }
+                    />
+                    <Label
+                        htmlFor="autogenerate_vouchers"
+                        className="leading-snug"
+                    >
+                        Autogenerate Vouchers
+                        <p className="text-xs text-muted-foreground">
+                            Otomatis membuat voucher saat paket terjual (tidak
+                            perlu pilih manual)
+                        </p>
+                    </Label>
+                </div>
+                {errors.autogenerate_vouchers && (
+                    <p className="text-sm text-red-600">
+                        {errors.autogenerate_vouchers}
                     </p>
                 )}
             </fieldset>

@@ -33,6 +33,7 @@ class VoucherPacketController extends Controller
             $voucher_packet->has_unlimited_issuance = $request->has_unlimited_issuance;
             $voucher_packet->assign_on_sale = $request->assign_on_sale;
             $voucher_packet->until_year_end = $request->until_year_end;
+            $voucher_packet->autogenerate_vouchers = $request->autogenerate_vouchers;
             $voucher_packet->expired_date = $request->expired_date;
             $voucher_packet->voucher_type_id = $request->voucher_type_id;
             $voucher_packet->description = $request->description;
@@ -57,6 +58,9 @@ class VoucherPacketController extends Controller
              $voucher_packet->quantity = $request->quantity;
              $voucher_packet->valid_period_months = $request->valid_period_months;
              $voucher_packet->has_unlimited_issuance = $request->has_unlimited_issuance;
+             $voucher_packet->assign_on_sale = $request->assign_on_sale;
+             $voucher_packet->until_year_end = $request->until_year_end;
+             $voucher_packet->autogenerate_vouchers = $request->autogenerate_vouchers;
              $voucher_packet->expired_date = $request->expired_date;
              $voucher_packet->voucher_type_id = $request->voucher_type_id;
              $voucher_packet->description = $request->description;

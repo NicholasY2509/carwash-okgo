@@ -169,11 +169,11 @@ const allNavItems = {
             icon: IdCard,
             permission: "master staff",
             items: [
-                {
-                    title: "Insentif SPV (Owner)",
-                    url: "/staff-incentives/summary",
-                    permission: "staff incentive summary",
-                },
+                // {
+                //     title: "Insentif SPV (Owner)",
+                //     url: "/staff-incentives/summary",
+                //     permission: "staff incentive summary",
+                // },
                 {
                     title: "Insentif SPV",
                     url: "/staff-incentives",
@@ -247,6 +247,11 @@ const allNavItems = {
                     title: "Tipe Voucher",
                     url: "/voucher-types",
                     permission: "voucher type",
+                },
+                {
+                    title: "Riwayat Voucher",
+                    url: "/voucher-history",
+                    permission: "voucher history",
                 },
             ],
         },

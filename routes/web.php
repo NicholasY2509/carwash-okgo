@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::resource('voucher-types', VoucherTypeController::class)->middleware('permission:voucher type');
     Route::resource('voucher-packets', VoucherPacketController::class)->middleware('permission:voucher packet');
+    Route::get('voucher-history', [\App\Http\Controllers\VoucherHistoryController::class, 'index'])->name('voucher-history.index')->middleware('permission:voucher history');
 
     // Settings
     Route::resource('users', UserController::class)->middleware('permission:user');

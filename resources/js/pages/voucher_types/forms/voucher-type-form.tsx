@@ -14,6 +14,7 @@ interface VoucherType {
     is_free: boolean;
     only_one_car: boolean;
     description: string;
+    voucher_suffix: string;
 }
 
 interface Props {
@@ -32,6 +33,7 @@ export default function VoucherTypeForm({
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: voucherType?.name || "",
         description: voucherType?.description || "",
+        voucher_suffix: voucherType?.voucher_suffix || "",
         is_free: voucherType?.is_free || false,
         only_one_car: voucherType?.only_one_car || false,
     });
@@ -75,6 +77,18 @@ export default function VoucherTypeForm({
                 />
                 {errors.name && (
                     <p className="text-sm text-red-600">{errors.name}</p>
+                )}
+
+                <Label htmlFor="voucher_suffix">Kode Suffix/Prefix (Opsional)</Label>
+                <Input
+                    id="voucher_suffix"
+                    type="text"
+                    value={data.voucher_suffix}
+                    onChange={(e) => setData("voucher_suffix", e.target.value)}
+                    className="mb-2"
+                />
+                {errors.voucher_suffix && (
+                    <p className="text-sm text-red-600">{errors.voucher_suffix}</p>
                 )}
 
                 <Label htmlFor="description">Deskripsi</Label>

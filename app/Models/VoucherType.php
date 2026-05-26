@@ -13,6 +13,7 @@ class VoucherType extends Model
         'is_free',
         'description',
         'only_one_car',
+        'voucher_suffix',
     ];
 
     protected $casts = [

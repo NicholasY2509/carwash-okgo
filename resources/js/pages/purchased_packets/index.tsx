@@ -17,6 +17,7 @@ import {
     X,
     XCircle,
     Edit,
+    InfoIcon,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -66,6 +67,8 @@ interface SalesTransactionRow {
         vouchers: Array<{
             id: string;
             serial_number: string;
+            status: string;
+            redeemed_at: string | null;
             voucher_type: { name: string } | null;
         }>;
     }>;
@@ -107,8 +110,13 @@ function EditExpirationDateDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="ml-2 h-6 w-6 p-0">
-                    <Edit className="h-3 w-3" />
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-6 w-6 p-0"
+                    title="Edit Tanggal Kedaluwarsa"
+                >
+                    <Edit className="h-4 w-4 text-blue-600" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -226,14 +234,6 @@ function CancelConfirmDialog({
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                                Plat Nomor
-                            </span>
-                            <span className="font-medium">
-                                {transaction.car?.plate_number ?? "-"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">
                                 Nama Paket
                             </span>
                             <span className="font-medium">{packetName}</span>
@@ -283,111 +283,152 @@ function CancelConfirmDialog({
     );
 }
 
-function PurchasedPacketDetails({ row }: { row: Row<SalesTransactionRow> }) {
-    const { purchased_packets } = row.original;
-
-    if (!Array.isArray(purchased_packets) || purchased_packets.length === 0) {
-        return (
-            <div className="p-4 text-center text-muted-foreground">
-                Tidak ada detail paket yang dibeli.
-            </div>
-        );
-    }
-
-    const firstPacket = purchased_packets[0];
+function VouchersDialog({ transaction }: { transaction: SalesTransactionRow }) {
+    const [open, setOpen] = useState(false);
 
     return (
-        <div className="p-4 space-y-4 bg-muted/50">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div>
-                    <Label className="text-sm font-semibold">
-                        Tanggal Berlaku
-                    </Label>
-                    <p className="text-lg font-medium">
-                        {format(
-                            new Date(firstPacket.purchased_at),
-                            "dd MMMM yyyy",
-                        )}
-                    </p>
-                </div>
-
-                <div>
-                    <Label className="text-sm font-semibold">
-                        Tanggal Kedaluwarsa
-                    </Label>
-                    <div className="flex items-center">
-                        <p className="text-lg font-medium">
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8">
+                    <InfoIcon />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Detail Voucher Pelanggan</DialogTitle>
+                    <DialogDescription>
+                        Daftar voucher untuk transaksi ini.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="bg-muted/50 p-4 justify-between rounded-lg border flex flex-wrap gap-x-12 gap-y-4 mt-2">
+                    <div>
+                        <p className="text-sm text-muted-foreground">
+                            Pelanggan
+                        </p>
+                        <p className="font-semibold text-lg">
+                            {transaction.customer?.name || "-"}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">
+                            Tanggal Pembelian
+                        </p>
+                        <p className="font-semibold text-lg">
                             {format(
-                                new Date(firstPacket.expired_at),
-                                "dd MMMM yyyy",
+                                new Date(transaction.transaction_date),
+                                "dd MMM yyyy HH:mm",
                             )}
                         </p>
-                        <EditExpirationDateDialog
-                            purchasedPacketId={firstPacket.id}
-                            currentDate={firstPacket.expired_at}
-                        />
                     </div>
                 </div>
-            </div>
-
-            <div>
-                <Label className="text-sm font-semibold">Detail Voucher</Label>
-                <div className="mt-2 space-y-3">
-                    {purchased_packets.map((packet) => (
+                <div className="space-y-6 mt-2">
+                    {transaction.purchased_packets?.map((packet) => (
                         <div
                             key={packet.id}
-                            className="p-3 border rounded-md bg-white"
+                            className="border rounded-xl overflow-hidden"
                         >
-                            <div className="flex justify-between items-start">
+                            <div className="bg-muted/30 p-4 border-b flex justify-between items-center flex-wrap gap-4">
                                 <div>
-                                    <p className="font-medium text-base">
-                                        {packet.voucher_packet?.name ||
-                                            "Nama Paket Tidak Tersedia"}
+                                    <p className="font-semibold text-base">
+                                        {packet.voucher_packet?.name || "Paket"}
                                     </p>
-                                    {packet.vouchers &&
-                                    Array.isArray(packet.vouchers) &&
-                                    packet.vouchers.length > 0 ? (
-                                        <>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Nomor Seri Voucher:
-                                            </p>
-                                            <p className="font-mono text-base font-semibold tracking-wider">
-                                                {packet.vouchers
-                                                    .map(
-                                                        (voucher) =>
-                                                            voucher.serial_number,
-                                                    )
-                                                    .join(", ")}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            Voucher akan ditugaskan saat
-                                            digunakan (Assign on Sale: false)
-                                        </p>
-                                    )}
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Berlaku:{" "}
+                                        {format(
+                                            new Date(packet.purchased_at),
+                                            "dd MMM yyyy",
+                                        )}
+                                    </p>
                                 </div>
-                                {packet.id !== firstPacket.id && (
+                                <div className="flex items-center gap-2">
                                     <div className="flex flex-col items-end">
-                                        <p className="text-xs text-muted-foreground">
-                                            Exp:{" "}
+                                        <p className="text-sm font-medium">
+                                            Kedaluwarsa:{" "}
                                             {format(
                                                 new Date(packet.expired_at),
                                                 "dd MMM yyyy",
                                             )}
                                         </p>
-                                        <EditExpirationDateDialog
-                                            purchasedPacketId={packet.id}
-                                            currentDate={packet.expired_at}
-                                        />
                                     </div>
+                                    <EditExpirationDateDialog
+                                        purchasedPacketId={packet.id}
+                                        currentDate={packet.expired_at}
+                                    />
+                                </div>
+                            </div>
+                            <div className="p-4 bg-white">
+                                {packet.vouchers &&
+                                packet.vouchers.length > 0 ? (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {packet.vouchers.map((v) => {
+                                            const isUsed =
+                                                v.status === "Redeemed" ||
+                                                v.status === "Used";
+                                            return (
+                                                <div
+                                                    key={v.id}
+                                                    className="flex justify-between items-center p-3 border rounded-lg"
+                                                >
+                                                    <div>
+                                                        <p className="font-bold tracking-wider">
+                                                            {v.serial_number}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                                            {
+                                                                v.voucher_type
+                                                                    ?.name
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <Badge
+                                                            variant={
+                                                                isUsed
+                                                                    ? "secondary"
+                                                                    : "default"
+                                                            }
+                                                            className={
+                                                                isUsed
+                                                                    ? ""
+                                                                    : "bg-green-600"
+                                                            }
+                                                        >
+                                                            {v.status}
+                                                        </Badge>
+                                                        {v.redeemed_at && (
+                                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                                Digunakan:{" "}
+                                                                {format(
+                                                                    new Date(
+                                                                        v.redeemed_at,
+                                                                    ),
+                                                                    "dd MMM yyyy",
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-2">
+                                        Voucher akan ditugaskan saat digunakan
+                                        (Assign on Sale: false)
+                                    </p>
                                 )}
                             </div>
                         </div>
                     ))}
+                    {(!transaction.purchased_packets ||
+                        transaction.purchased_packets.length === 0) && (
+                        <div className="text-center p-6 text-muted-foreground border rounded-xl border-dashed">
+                            Tidak ada paket yang ditemukan.
+                        </div>
+                    )}
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -407,24 +448,6 @@ export default function PurchasedPacketIndex() {
 
     const columns: ColumnDef<SalesTransactionRow>[] = [
         {
-            id: "expand",
-            header: "",
-            cell: ({ row }) => (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => row.toggleExpanded()}
-                    className="h-8 w-8 p-0"
-                >
-                    {row.getIsExpanded() ? (
-                        <ChevronDown className="h-4 w-4" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4" />
-                    )}
-                </Button>
-            ),
-        },
-        {
             id: "index",
             header: "No",
             cell: (row) =>
@@ -437,11 +460,11 @@ export default function PurchasedPacketIndex() {
             header: "Customer",
             cell: ({ row }) => row.original.customer?.name || "-",
         },
-        {
-            accessorKey: "car.plate_number",
-            header: "Plat Nomor",
-            cell: ({ row }) => row.original.car?.plate_number || "-",
-        },
+        // {
+        //     accessorKey: "car.plate_number",
+        //     header: "Plat Nomor",
+        //     cell: ({ row }) => row.original.car?.plate_number || "-",
+        // },
         {
             accessorKey: "transaction_date",
             header: "Tanggal",
@@ -475,6 +498,25 @@ export default function PurchasedPacketIndex() {
                     : 0,
         },
         {
+            header: "Penggunaan Voucher",
+            cell: ({ row }) => {
+                const allVouchers =
+                    row.original.purchased_packets?.flatMap(
+                        (p) => p.vouchers || [],
+                    ) || [];
+                const total = allVouchers.length;
+                const used = allVouchers.filter(
+                    (v) => v.status === "Redeemed" || v.status === "Used",
+                ).length;
+                if (total === 0) return "-";
+                return (
+                    <span className="font-medium text-sm">
+                        {used} / {total} Terpakai
+                    </span>
+                );
+            },
+        },
+        {
             header: "Nama Paket",
             cell: ({ row }) =>
                 Array.isArray(row.original.purchased_packets) &&
@@ -489,7 +531,7 @@ export default function PurchasedPacketIndex() {
         },
         {
             accessorKey: "staff.full_name",
-            header: "Petugas",
+            header: "Kasir",
             cell: ({ row }) => row.original.staff?.full_name || "-",
         },
         {
@@ -521,7 +563,8 @@ export default function PurchasedPacketIndex() {
                 const transaction = row.original;
 
                 return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                        <VouchersDialog transaction={transaction} />
                         {transaction.status !== "cancelled" &&
                             hasPermission("cancel transactions") && (
                                 <CancelConfirmDialog
@@ -624,12 +667,7 @@ export default function PurchasedPacketIndex() {
                             )}
                         </div>
                     </div>
-                    <DataTable
-                        columns={columns}
-                        data={pagination.data || []}
-                        renderSubComponent={PurchasedPacketDetails}
-                        getRowCanExpand={() => true}
-                    />
+                    <DataTable columns={columns} data={pagination.data || []} />
                     {pagination && (
                         <Pagination
                             pagination={pagination}

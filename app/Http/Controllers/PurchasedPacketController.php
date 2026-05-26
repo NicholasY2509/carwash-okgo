@@ -124,6 +124,22 @@ class PurchasedPacketController extends Controller
             $voucherIds = $request->voucher_ids ?? [];
             $vouchersPerPacket = $voucher_packet->quantity;
 
+            $autogeneratePrefix = $voucher_packet->voucherType->voucher_suffix ?? 'VOUCHER-';
+            $lastNumber = 0;
+            
+            if ($voucher_packet->autogenerate_vouchers) {
+                $latestVoucher = Voucher::where('serial_number', 'like', $autogeneratePrefix . '%')
+                    ->orderByRaw('LENGTH(serial_number) DESC')
+                    ->orderBy('serial_number', 'desc')
+                    ->first();
+                if ($latestVoucher) {
+                    $lastNumberStr = str_replace($autogeneratePrefix, '', $latestVoucher->serial_number);
+                    if (is_numeric($lastNumberStr)) {
+                        $lastNumber = (int) $lastNumberStr;
+                    }
+                }
+            }
+
             for ($i = 0; $i < $quantity; $i++) {
                 $purchased_packet = PurchasedPacket::create([
                     'customer_id' => $customer->id,
@@ -138,7 +154,25 @@ class PurchasedPacketController extends Controller
                             : Carbon::now('Asia/Jakarta')->addMonths($voucher_packet->valid_period_months)->toDateTimeString()),
                 ]);
                 $purchasedPackets[] = $purchased_packet;
-                if ($voucher_packet->assign_on_sale) {
+                
+                if ($voucher_packet->autogenerate_vouchers) {
+                    for ($j = 0; $j < $vouchersPerPacket; $j++) {
+                        $lastNumber++;
+                        $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT);
+                        
+                        while(Voucher::where('serial_number', $serialNumber)->exists()) {
+                            $lastNumber++;
+                            $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT);
+                        }
+                        
+                        Voucher::create([
+                            'serial_number' => $serialNumber,
+                            'voucher_type_id' => $voucher_packet->voucher_type_id,
+                            'status' => 'Sold',
+                            'purchased_packet_id' => $purchased_packet->id,
+                        ]);
+                    }
+                } elseif ($voucher_packet->assign_on_sale) {
                     $start = $i * $vouchersPerPacket;
                     $packetVoucherIds = array_slice($voucherIds, $start, $vouchersPerPacket);
 

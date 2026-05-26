@@ -352,7 +352,8 @@ export default function CarWashCreate() {
                                     </div>
 
                                     {(activeForm === "Cash" ||
-                                        activeForm === "Voucher") && (
+                                        (activeForm === "Voucher" &&
+                                            itemsPrice > 0)) && (
                                         <div className="space-y-3">
                                             <Label required>
                                                 Metode Pembayaran
