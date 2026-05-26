@@ -24,11 +24,18 @@ import {
 } from "@/components/ui/dialog";
 import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, X, XCircle, Info } from "lucide-react";
+import { Search, X, XCircle, Info, Send } from "lucide-react";
 import { toast } from "sonner";
 import { usePermission } from "@/hooks/use-permission";
 import { Modal, ModalHeader } from "@/components/ui/modal";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
 
 interface Staff {
@@ -96,6 +103,41 @@ interface ServiceRecords {
     transaction_type?: string;
 }
 
+function ResendReceiptButton({
+    transactionId,
+}: {
+    transactionId: string | number;
+}) {
+    const [loading, setLoading] = useState(false);
+
+    const handleResend = () => {
+        setLoading(true);
+        router.post(
+            route("sales-transactions.resend-receipt", transactionId),
+            {},
+            {
+                onSuccess: () =>
+                    toast.success("Struk WhatsApp berhasil dikirim ulang"),
+                onError: () => toast.error("Gagal mengirim ulang struk"),
+                onFinish: () => setLoading(false),
+            },
+        );
+    };
+
+    return (
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResend}
+            disabled={loading}
+            className="h-8 w-8 p-0 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+            title="Kirim Ulang Struk WhatsApp"
+        >
+            <Send className="h-4 w-4" />
+        </Button>
+    );
+}
+
 function CancelConfirmDialog({
     record,
     onConfirm,
@@ -112,22 +154,25 @@ function CancelConfirmDialog({
             route("car-washes.cancel", record.id),
             {},
             {
-                onSuccess: () => { setOpen(false); toast.success("Transaksi berhasil dibatalkan"); },
+                onSuccess: () => {
+                    setOpen(false);
+                    toast.success("Transaksi berhasil dibatalkan");
+                },
                 onFinish: () => setLoading(false),
-            }
+            },
         );
         onConfirm();
     };
 
     const formattedDate = record.service_date
         ? new Intl.DateTimeFormat("id-ID", {
-            day: "numeric",
-            month: "numeric",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Jakarta",
-        }).format(new Date(record.service_date))
+              day: "numeric",
+              month: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Asia/Jakarta",
+          }).format(new Date(record.service_date))
         : "-";
 
     return (
@@ -145,35 +190,60 @@ function CancelConfirmDialog({
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-[440px]">
                     <DialogHeader>
-                        <DialogTitle className="text-red-600">Batalkan Transaksi?</DialogTitle>
+                        <DialogTitle className="text-red-600">
+                            Batalkan Transaksi?
+                        </DialogTitle>
                         <DialogDescription>
-                            Tindakan ini akan menandai transaksi dan semua catatan layanan terkait sebagai <strong>dibatalkan</strong>. Tindakan ini tidak dapat diurungkan.
+                            Tindakan ini akan menandai transaksi dan semua
+                            catatan layanan terkait sebagai{" "}
+                            <strong>dibatalkan</strong>. Tindakan ini tidak
+                            dapat diurungkan.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="rounded-lg border p-4 space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Plat Nomor</span>
-                            <span className="font-medium">{record.car.plate_number}</span>
+                            <span className="text-muted-foreground">
+                                Plat Nomor
+                            </span>
+                            <span className="font-medium">
+                                {record.car.plate_number}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Customer</span>
-                            <span className="font-medium">{record.car.customer.name}</span>
+                            <span className="text-muted-foreground">
+                                Customer
+                            </span>
+                            <span className="font-medium">
+                                {record.car.customer.name}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Tanggal</span>
+                            <span className="text-muted-foreground">
+                                Tanggal
+                            </span>
                             <span className="font-medium">{formattedDate}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Total</span>
-                            <span className="font-semibold">{formatRupiah(record.total_amount)}</span>
+                            <span className="font-semibold">
+                                {formatRupiah(record.total_amount)}
+                            </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Pembayaran</span>
-                            <span className="font-medium">{record.payment_type}</span>
+                            <span className="text-muted-foreground">
+                                Pembayaran
+                            </span>
+                            <span className="font-medium">
+                                {record.payment_type}
+                            </span>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={loading}
+                        >
                             Kembali
                         </Button>
                         <Button
@@ -181,7 +251,9 @@ function CancelConfirmDialog({
                             onClick={handleConfirm}
                             disabled={loading}
                         >
-                            {loading ? "Membatalkan..." : "Konfirmasi Pembatalan"}
+                            {loading
+                                ? "Membatalkan..."
+                                : "Konfirmasi Pembatalan"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -196,7 +268,8 @@ export default function CarWashIndex() {
     const pagination = props.service_records;
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
 
-    const [selectedWashDetail, setSelectedWashDetail] = useState<ServiceRecords | null>(null);
+    const [selectedWashDetail, setSelectedWashDetail] =
+        useState<ServiceRecords | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     const isMounted = useRef(false);
@@ -285,7 +358,10 @@ export default function CarWashIndex() {
                     );
                 }
                 return (
-                    <Badge variant="outline" className="text-xs text-green-700 border-green-300 bg-green-50">
+                    <Badge
+                        variant="outline"
+                        className="text-xs text-green-700 border-green-300 bg-green-50"
+                    >
                         Aktif
                     </Badge>
                 );
@@ -310,6 +386,9 @@ export default function CarWashIndex() {
                         >
                             <Info className="h-3.5 w-3.5" /> Detail
                         </Button>
+                        {record.status !== "cancelled" && (
+                            <ResendReceiptButton transactionId={record.id} />
+                        )}
                         {/* {record.status !== "cancelled" && hasPermission("cancel transactions") && (
                             <CancelConfirmDialog record={record} onConfirm={() => { }} />
                         )} */}
@@ -363,7 +442,9 @@ export default function CarWashIndex() {
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-end flex-row items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Baris per halaman:</span>
+                            <span className="text-sm text-muted-foreground">
+                                Baris per halaman:
+                            </span>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -378,7 +459,9 @@ export default function CarWashIndex() {
                                     {[5, 10, 20, 50, 100].map((size) => (
                                         <DropdownMenuItem
                                             key={size}
-                                            onSelect={() => handlePerPageChange(size)}
+                                            onSelect={() =>
+                                                handlePerPageChange(size)
+                                            }
                                         >
                                             {size}
                                         </DropdownMenuItem>
@@ -420,56 +503,89 @@ export default function CarWashIndex() {
             </div>
 
             {/* Car Wash Detail Modal */}
-            <Modal open={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} className="max-w-4xl">
-                <ModalHeader title={`Detail Transaksi Pencucian #${selectedWashDetail?.id}`} />
+            <Modal
+                open={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                className="max-w-4xl"
+            >
+                <ModalHeader
+                    title={`Detail Transaksi Pencucian #${selectedWashDetail?.id}`}
+                />
                 {selectedWashDetail && (
                     <div className="space-y-6 px-1 py-2 max-h-[80vh] overflow-y-auto">
                         {/* Summary Cards */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div className="bg-muted/30 p-3 rounded-lg border">
-                                <span className="text-xs text-muted-foreground block mb-1">Status Transaksi</span>
+                                <span className="text-xs text-muted-foreground block mb-1">
+                                    Status Transaksi
+                                </span>
                                 <div>
-                                    {selectedWashDetail.status === "cancelled" ? (
-                                        <Badge variant="destructive">Dibatalkan</Badge>
+                                    {selectedWashDetail.status ===
+                                    "cancelled" ? (
+                                        <Badge variant="destructive">
+                                            Dibatalkan
+                                        </Badge>
                                     ) : (
-                                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">Aktif</Badge>
+                                        <Badge
+                                            variant="outline"
+                                            className="text-green-700 border-green-300 bg-green-50"
+                                        >
+                                            Aktif
+                                        </Badge>
                                     )}
                                 </div>
                             </div>
                             <div className="bg-muted/30 p-3 rounded-lg border">
-                                <span className="text-xs text-muted-foreground block mb-1">Tanggal & Waktu</span>
+                                <span className="text-xs text-muted-foreground block mb-1">
+                                    Tanggal & Waktu
+                                </span>
                                 <span className="font-semibold text-foreground">
                                     {selectedWashDetail.service_date
                                         ? new Intl.DateTimeFormat("id-ID", {
-                                            day: "numeric",
-                                            month: "long",
-                                            year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            timeZone: "Asia/Jakarta",
-                                        }).format(new Date(selectedWashDetail.service_date))
+                                              day: "numeric",
+                                              month: "long",
+                                              year: "numeric",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                              timeZone: "Asia/Jakarta",
+                                          }).format(
+                                              new Date(
+                                                  selectedWashDetail.service_date,
+                                              ),
+                                          )
                                         : "-"}
                                 </span>
                             </div>
                             <div className="bg-muted/30 p-3 rounded-lg border">
-                                <span className="text-xs text-muted-foreground block mb-1">Customer & Kendaraan</span>
+                                <span className="text-xs text-muted-foreground block mb-1">
+                                    Customer & Kendaraan
+                                </span>
                                 <span className="font-semibold text-foreground">
-                                    {selectedWashDetail.car?.customer?.name} ({selectedWashDetail.car?.plate_number})
+                                    {selectedWashDetail.car?.customer?.name} (
+                                    {selectedWashDetail.car?.plate_number})
                                 </span>
                             </div>
                             <div className="bg-muted/30 p-3 rounded-lg border">
-                                <span className="text-xs text-muted-foreground block mb-1">Metode Pembayaran</span>
+                                <span className="text-xs text-muted-foreground block mb-1">
+                                    Metode Pembayaran
+                                </span>
                                 <span className="font-semibold text-foreground">
                                     {selectedWashDetail.payment_type}
                                     {selectedWashDetail.voucher && (
                                         <span className="text-xs text-muted-foreground block">
-                                            Voucher SN: {selectedWashDetail.voucher.serial_number}
+                                            Voucher SN:{" "}
+                                            {
+                                                selectedWashDetail.voucher
+                                                    .serial_number
+                                            }
                                         </span>
                                     )}
                                 </span>
                             </div>
                             <div className="bg-muted/30 p-3 rounded-lg border">
-                                <span className="text-xs text-muted-foreground block mb-1">Kasir</span>
+                                <span className="text-xs text-muted-foreground block mb-1">
+                                    Kasir
+                                </span>
                                 <span className="font-semibold text-foreground">
                                     {selectedWashDetail.staff?.full_name || "-"}
                                 </span>
@@ -478,38 +594,66 @@ export default function CarWashIndex() {
 
                         {/* Service Records Table */}
                         <div className="space-y-2">
-                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Detail Layanan Cuci</h3>
+                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Detail Layanan Cuci
+                            </h3>
                             <div className="border rounded-lg overflow-hidden bg-card">
                                 <Table className="w-full text-sm text-left">
                                     <TableHeader className="bg-muted/40">
                                         <TableRow>
-                                            <TableHead className="font-semibold">Layanan</TableHead>
-                                            <TableHead className="font-semibold text-center">Stall</TableHead>
-                                            <TableHead className="font-semibold text-center">Pencuci</TableHead>
-                                            <TableHead className="font-semibold text-right">Harga</TableHead>
+                                            <TableHead className="font-semibold">
+                                                Layanan
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-center">
+                                                Stall
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-center">
+                                                Pencuci
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-right">
+                                                Harga
+                                            </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {selectedWashDetail.service_records && selectedWashDetail.service_records.length > 0 ? (
-                                            selectedWashDetail.service_records.map((sr) => (
-                                                <TableRow key={sr.id}>
-                                                    <TableCell className="font-semibold text-sm">
-                                                        {sr.product?.name || "Layanan Cuci"}
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        {sr.stall?.name || "-"}
-                                                    </TableCell>
-                                                    <TableCell className="text-center font-medium">
-                                                        {sr.staff?.full_name || "-"}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-semibold text-foreground">
-                                                        {sr.product ? formatRupiah(sr.price ?? sr.product.price) : "-"}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
+                                        {selectedWashDetail.service_records &&
+                                        selectedWashDetail.service_records
+                                            .length > 0 ? (
+                                            selectedWashDetail.service_records.map(
+                                                (sr) => (
+                                                    <TableRow key={sr.id}>
+                                                        <TableCell className="font-semibold text-sm">
+                                                            {sr.product?.name ||
+                                                                "Layanan Cuci"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            {sr.stall?.name ||
+                                                                "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-medium">
+                                                            {sr.staff
+                                                                ?.full_name ||
+                                                                "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-semibold text-foreground">
+                                                            {sr.product
+                                                                ? formatRupiah(
+                                                                      sr.price ??
+                                                                          sr
+                                                                              .product
+                                                                              .price,
+                                                                  )
+                                                                : "-"}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ),
+                                            )
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                                <TableCell
+                                                    colSpan={4}
+                                                    className="text-center text-muted-foreground"
+                                                >
                                                     Tidak ada data layanan
                                                 </TableCell>
                                             </TableRow>
@@ -521,43 +665,72 @@ export default function CarWashIndex() {
 
                         {/* Sold Items Detail Block */}
                         <div className="space-y-2">
-                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Barang / Item Pelengkap</h3>
-                            {selectedWashDetail.items && selectedWashDetail.items.length > 0 ? (
+                            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Barang / Item Pelengkap
+                            </h3>
+                            {selectedWashDetail.items &&
+                            selectedWashDetail.items.length > 0 ? (
                                 <div className="border rounded-lg overflow-hidden bg-card">
                                     <Table className="w-full text-sm text-left">
                                         <TableHeader className="bg-muted/40">
                                             <TableRow>
-                                                <TableHead className="font-semibold">Nama Barang</TableHead>
-                                                <TableHead className="font-semibold text-center">Qty</TableHead>
-                                                <TableHead className="font-semibold text-right">Harga Satuan</TableHead>
-                                                <TableHead className="font-semibold text-right">Subtotal</TableHead>
+                                                <TableHead className="font-semibold">
+                                                    Nama Barang
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-center">
+                                                    Qty
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-right">
+                                                    Harga Satuan
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-right">
+                                                    Subtotal
+                                                </TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {selectedWashDetail.items.map((item) => {
-                                                const isIncluded = Number(item.price) === 0;
-                                                return (
-                                                    <TableRow key={item.id}>
-                                                        <TableCell className="font-semibold text-sm">
-                                                            {item.item?.name || `Item ID: ${item.item_id}`}
-                                                            {isIncluded && (
-                                                                <Badge variant="secondary" className="ml-2 text-[9px] font-bold text-blue-600 bg-blue-50">
-                                                                    INCLUDED (FREE)
-                                                                </Badge>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-medium">
-                                                            {item.quantity}
-                                                        </TableCell>
-                                                        <TableCell className="text-right text-muted-foreground">
-                                                            {isIncluded ? "Rp 0" : formatRupiah(item.price)}
-                                                        </TableCell>
-                                                        <TableCell className="text-right font-bold text-foreground">
-                                                            {isIncluded ? "Rp 0" : formatRupiah(item.subtotal)}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
+                                            {selectedWashDetail.items.map(
+                                                (item) => {
+                                                    const isIncluded =
+                                                        Number(item.price) ===
+                                                        0;
+                                                    return (
+                                                        <TableRow key={item.id}>
+                                                            <TableCell className="font-semibold text-sm">
+                                                                {item.item
+                                                                    ?.name ||
+                                                                    `Item ID: ${item.item_id}`}
+                                                                {isIncluded && (
+                                                                    <Badge
+                                                                        variant="secondary"
+                                                                        className="ml-2 text-[9px] font-bold text-blue-600 bg-blue-50"
+                                                                    >
+                                                                        INCLUDED
+                                                                        (FREE)
+                                                                    </Badge>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-medium">
+                                                                {item.quantity}
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-muted-foreground">
+                                                                {isIncluded
+                                                                    ? "Rp 0"
+                                                                    : formatRupiah(
+                                                                          item.price,
+                                                                      )}
+                                                            </TableCell>
+                                                            <TableCell className="text-right font-bold text-foreground">
+                                                                {isIncluded
+                                                                    ? "Rp 0"
+                                                                    : formatRupiah(
+                                                                          item.subtotal,
+                                                                      )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                },
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </div>
@@ -571,19 +744,29 @@ export default function CarWashIndex() {
                         {/* Grand Total Area */}
                         <div className="border-t pt-4 flex flex-col items-end space-y-1.5">
                             <div className="flex justify-between w-full max-w-xs text-sm">
-                                <span className="text-muted-foreground">Grand Total:</span>
+                                <span className="text-muted-foreground">
+                                    Grand Total:
+                                </span>
                                 <span className="font-extrabold text-lg text-blue-600 dark:text-blue-400">
-                                    {formatRupiah(selectedWashDetail.total_amount)}
+                                    {formatRupiah(
+                                        selectedWashDetail.total_amount,
+                                    )}
                                 </span>
                             </div>
-                            {selectedWashDetail.paid_amount !== null && selectedWashDetail.paid_amount !== undefined && (
-                                <div className="flex justify-between w-full max-w-xs text-sm">
-                                    <span className="text-muted-foreground">Nominal Bayar:</span>
-                                    <span className="font-medium text-foreground">
-                                        {formatRupiah(selectedWashDetail.paid_amount)}
-                                    </span>
-                                </div>
-                            )}
+                            {selectedWashDetail.paid_amount !== null &&
+                                selectedWashDetail.paid_amount !==
+                                    undefined && (
+                                    <div className="flex justify-between w-full max-w-xs text-sm">
+                                        <span className="text-muted-foreground">
+                                            Nominal Bayar:
+                                        </span>
+                                        <span className="font-medium text-foreground">
+                                            {formatRupiah(
+                                                selectedWashDetail.paid_amount,
+                                            )}
+                                        </span>
+                                    </div>
+                                )}
                             {/* {selectedWashDetail.change_amount !== null && selectedWashDetail.change_amount !== undefined && (
                                 <div className="flex justify-between w-full max-w-xs text-sm">
                                     <span className="text-muted-foreground">Kembalian:</span>
@@ -595,7 +778,11 @@ export default function CarWashIndex() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)} className="px-6">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsDetailModalOpen(false)}
+                                className="px-6"
+                            >
                                 Tutup
                             </Button>
                         </div>

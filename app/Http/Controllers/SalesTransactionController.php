@@ -56,4 +56,17 @@ class SalesTransactionController extends Controller
             ]
         ]);
     }
+
+    public function resendReceipt(string $id)
+    {
+        $transaction = SalesTransaction::findOrFail($id);
+        
+        if ($transaction->status === 'cancelled') {
+            return back()->with('error', 'Tidak dapat mengirim struk untuk transaksi yang dibatalkan.');
+        }
+
+        \App\Jobs\SendWhatsAppReceiptJob::dispatch($transaction)->afterResponse();
+
+        return back()->with('success', 'Struk WhatsApp sedang dikirim ulang.');
+    }
 }

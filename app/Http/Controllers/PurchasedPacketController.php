@@ -231,6 +231,10 @@ class PurchasedPacketController extends Controller
                 );
             }
 
+            if ($request->input('payment_method') !== 'QRIS') {
+                \App\Jobs\SendWhatsAppReceiptJob::dispatch($sales_transaction)->afterResponse();
+            }
+
             if ($midtransResponse) {
                 return redirect()->back()->with('transaction', $sales_transaction)->with('midtrans', $midtransResponse);
             }

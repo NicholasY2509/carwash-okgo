@@ -18,6 +18,7 @@ import {
     XCircle,
     Edit,
     InfoIcon,
+    Send,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -73,6 +74,41 @@ interface SalesTransactionRow {
         }>;
     }>;
     transaction_type: string;
+}
+
+function ResendReceiptButton({
+    transactionId,
+}: {
+    transactionId: string | number;
+}) {
+    const [loading, setLoading] = useState(false);
+
+    const handleResend = () => {
+        setLoading(true);
+        router.post(
+            route("sales-transactions.resend-receipt", transactionId),
+            {},
+            {
+                onSuccess: () =>
+                    toast.success("Struk WhatsApp berhasil dikirim ulang"),
+                onError: () => toast.error("Gagal mengirim ulang struk"),
+                onFinish: () => setLoading(false),
+            },
+        );
+    };
+
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={handleResend}
+            disabled={loading}
+            className="h-8 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+            title="Kirim Ulang Struk WhatsApp"
+        >
+            <Send className="h-4 w-4" />
+        </Button>
+    );
 }
 
 function EditExpirationDateDialog({
@@ -565,6 +601,11 @@ export default function PurchasedPacketIndex() {
                 return (
                     <div className="flex items-center gap-2">
                         <VouchersDialog transaction={transaction} />
+                        {transaction.status !== "cancelled" && (
+                            <ResendReceiptButton
+                                transactionId={transaction.id}
+                            />
+                        )}
                         {transaction.status !== "cancelled" &&
                             hasPermission("cancel transactions") && (
                                 <CancelConfirmDialog
