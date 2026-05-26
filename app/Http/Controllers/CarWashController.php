@@ -158,6 +158,7 @@ class CarWashController extends Controller
 
         $staffs = \App\Models\Staff::select(['id', 'full_name'])
             ->orderBy('full_name')
+            ->where('work_position_id', 4)
             ->get();
 
         $items = \App\Models\Item::select(['id', 'name', 'stock', 'price'])

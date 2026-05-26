@@ -49,7 +49,7 @@ export default function IncentiveTiersIndex() {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Settings", href: "/settings/profile" },
-        { title: "Master Tier Insentif", href: "/settings/incentive-tiers" },
+        { title: "Master Tier Insentif SPV", href: "/settings/incentive-tiers" },
     ];
 
     const columns: ColumnDef<IncentiveTier>[] = [
@@ -120,11 +120,11 @@ export default function IncentiveTiersIndex() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Master Tier Insentif" />
+            <Head title="Master Tier Insentif SPV" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 lg:p-6">
                 <div className="flex justify-between items-center">
                     <Heading
-                        title="Master Tier Insentif Staff"
+                        title="Master Tier Insentif SPV"
                         description="Konfigurasi rentang jumlah cucian mobil dan komisi insentif per mobil."
                     />
                     <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1">

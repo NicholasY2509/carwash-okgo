@@ -139,6 +139,11 @@ export default function CarWashCreate() {
             setIsSubmitting(false);
             return;
         }
+        if (activeForm === "Voucher" && itemsPrice > 0 && !paymentMethod) {
+            setFooterError("Pilih metode pembayaran untuk barang tambahan.");
+            setIsSubmitting(false);
+            return;
+        }
         setFooterError(null);
 
         const footerData: FooterData = {
@@ -346,7 +351,8 @@ export default function CarWashCreate() {
                                         </div>
                                     </div>
 
-                                    {activeForm === "Cash" && (
+                                    {(activeForm === "Cash" ||
+                                        activeForm === "Voucher") && (
                                         <div className="space-y-3">
                                             <Label required>
                                                 Metode Pembayaran

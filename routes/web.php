@@ -125,6 +125,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('roles', RoleController::class)->middleware('permission:role');
     Route::resource('permissions', PermissionController::class)->middleware('permission:permission');
     Route::resource('settings/incentive-tiers', \App\Http\Controllers\Settings\IncentiveTierController::class)->middleware('permission:incentive tier');
+    Route::resource('settings/staff-incentive-tiers', \App\Http\Controllers\Settings\StaffIncentiveTierController::class)->middleware('permission:incentive tier');
+    Route::resource('settings/cashier-incentive-tiers', \App\Http\Controllers\Settings\CashierIncentiveTierController::class)->middleware('permission:incentive tier');
+
+    // New Incentive Calculation Pages
+    Route::controller(\App\Http\Controllers\StaffLevelIncentiveController::class)->group(function () {
+        Route::get('staff-level-incentives', 'index')->name('staff-level-incentives.index')->middleware('permission:staff incentive');
+    });
+    Route::controller(\App\Http\Controllers\CashierIncentiveController::class)->group(function () {
+        Route::get('cashier-incentives', 'index')->name('cashier-incentives.index')->middleware('permission:staff incentive');
+    });
 });
 
 require __DIR__ . '/settings.php';

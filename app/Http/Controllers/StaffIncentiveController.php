@@ -87,6 +87,11 @@ class StaffIncentiveController extends Controller
             return $staff;
         });
 
+        // Filter to only those who have incentive > 0
+        $staffReport = $staffReport->filter(function ($staff) {
+            return $staff->total_incentive > 0;
+        });
+
         $staffReport = $staffReport->sortByDesc('car_washes_count')->values();
 
         $totalWashes = $staffReport->sum('car_washes_count');

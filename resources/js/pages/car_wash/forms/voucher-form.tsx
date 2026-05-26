@@ -13,12 +13,27 @@ import {
 } from "@/components/ui/select";
 import { useTransactionHandler } from "@/hooks/use-transaction-handler";
 import { router, useForm } from "@inertiajs/react";
-import { Separator } from "@radix-ui/react-separator";
 import axios from "axios";
-import { LoaderCircle, ShoppingCart } from "lucide-react";
+import {
+    LoaderCircle,
+    ShoppingCart,
+    UserSearch,
+    FileSearch,
+} from "lucide-react";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import { currencyFormatter } from "@/lib/currency-formatter";
 import CarPlateSearch from "./car-plate-search";
+import { CustomerSearch } from "@/pages/purchased_packets/forms/customer-search";
+import React, {
+    forwardRef,
+    useImperativeHandle,
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+} from "react";
+import { useDebounce } from "@/hooks/use-debounce";
+import CarInformationCard from "@/components/car-information-card";
 
 export interface FooterData {
     product_id: string;
@@ -44,6 +59,7 @@ interface Customer {
     name: string;
     phone: string;
     email: string;
+    cars?: Car[];
 }
 
 interface Voucher {
@@ -154,18 +170,6 @@ const useSearch = (
     };
 };
 
-import React, {
-    forwardRef,
-    useImperativeHandle,
-    useState,
-    useEffect,
-    useCallback,
-    useMemo,
-} from "react";
-import Swal from "sweetalert2";
-import { useDebounce } from "@/hooks/use-debounce";
-import CarInformationCard from "@/components/car-information-card";
-
 const CreateVoucherPurchase = forwardRef<
     CreateVoucherPurchaseHandle,
     CreateVoucherPurchaseProps
@@ -181,7 +185,7 @@ const CreateVoucherPurchase = forwardRef<
         },
         ref,
     ) => {
-        const { data, setData, post, processing, errors, reset } = useForm({
+        const { data, setData, processing, errors, reset } = useForm({
             serial_number: "",
             plate_number: "",
             voucher_id: "",
@@ -194,11 +198,14 @@ const CreateVoucherPurchase = forwardRef<
             selected_items: [] as number[],
         });
 
-        // Sync whenever selectedItems changes (managed by parent)
+        // Sync whenever selectedItems changes
         useEffect(() => {
             setData("selected_items", selectedItems);
         }, [selectedItems]);
 
+        const [activeTab, setActiveTab] = useState<"customer" | "manual">(
+            "customer",
+        );
         const [foundVoucher, setFoundVoucher] = useState<Voucher | null>(null);
         const [searchError, setSearchError] = useState<string | null>(null);
         const [isSearching, setIsSearching] = useState(false);
@@ -207,7 +214,6 @@ const CreateVoucherPurchase = forwardRef<
             reset,
         });
         const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-
         const [localErrors, setLocalErrors] = useState<Record<string, string>>(
             {},
         );
@@ -218,47 +224,93 @@ const CreateVoucherPurchase = forwardRef<
         } | null>(null);
 
         const carPlateSearch = useSearch("/api/cars/search", "plate");
+        const customerSearch = useSearch("/api/customers/search", "query");
+
+        const [customerVouchers, setCustomerVouchers] = useState<any[]>([]);
+        const [isFetchingVouchers, setIsFetchingVouchers] = useState(false);
+        const [selectedCustomer, setSelectedCustomer] =
+            useState<Customer | null>(null);
+        const [hasSearchedCustomer, setHasSearchedCustomer] = useState(false);
+        const [selectedCustomerCarId, setSelectedCustomerCarId] =
+            useState<string>("");
+
+        // Reset state when switching tabs to avoid stale data
+        const switchTab = (tab: "customer" | "manual") => {
+            setActiveTab(tab);
+            reset();
+            setFoundVoucher(null);
+            setSelectedCar(null);
+            setSelectedCustomer(null);
+            setCustomerVouchers([]);
+            setHasSearchedCustomer(false);
+            carPlateSearch.updateQuery("");
+            customerSearch.updateQuery("");
+            setSearchError(null);
+            setLocalErrors({});
+            setSelectedCustomerCarId("");
+        };
+
+        const handleCustomerSelect = useCallback(
+            (customer: Customer) => {
+                setSelectedCustomer(customer);
+                customerSearch.updateQuery(customer.name);
+                customerSearch.closeDropdown();
+                setIsFetchingVouchers(true);
+                setCustomerVouchers([]);
+                setHasSearchedCustomer(true);
+
+                // Clear any previously selected car in tab 1
+                setSelectedCustomerCarId("");
+
+                updateFormData({
+                    customer_id: customer.id,
+                    customer_name: customer.name,
+                    customer_phone: customer.phone,
+                });
+
+                axios
+                    .get(`/api/vouchers/customer/${customer.id}`)
+                    .then((response) => {
+                        setCustomerVouchers(response.data);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        setIsFetchingVouchers(false);
+                    });
+            },
+            [customerSearch],
+        );
 
         const canSubmit = useMemo(() => {
-            return (
+            const hasValidVoucher =
                 !!foundVoucher &&
                 !foundVoucher.is_expired &&
                 (foundVoucher.status === "Active" ||
-                    foundVoucher.status === "Sold") &&
-                (data.car_id || data.plate_number)
-            );
-        }, [foundVoucher, data.car_id, data.plate_number]);
+                    foundVoucher.status === "Sold");
 
-        // Memoized summary data
-        const summaryData = useMemo(() => {
-            if (!selectedCar && !data.plate_number) return null;
-
-            const selectedCarTypeName = carTypes.find(
-                (t) =>
-                    String(t.id) ===
-                    String(selectedCar?.car.car_type_id || data.car_type_id),
-            )?.name;
-
-            return {
-                car: selectedCar
-                    ? `${selectedCar.car.plate_number}${selectedCarTypeName ? ` - ${selectedCarTypeName}` : ""}`
-                    : `${data.plate_number}${selectedCarTypeName ? ` - ${selectedCarTypeName}` : ""}`,
-                customer:
-                    selectedCar?.customer.name ||
-                    data.customer_name ||
-                    foundVoucher?.purchased_packet?.customer.name ||
-                    "Customer dari voucher",
-            };
+            if (activeTab === "customer") {
+                return (
+                    hasValidVoucher &&
+                    (data.car_id || (data.plate_number && data.car_type_id))
+                );
+            } else {
+                return (
+                    hasValidVoucher &&
+                    (data.car_id || data.plate_number) &&
+                    data.customer_name
+                );
+            }
         }, [
-            selectedCar,
+            foundVoucher,
+            data.car_id,
             data.plate_number,
             data.car_type_id,
             data.customer_name,
-            foundVoucher,
-            carTypes,
+            activeTab,
         ]);
 
-        // Optimized form update function
         const updateFormData = useCallback(
             (updates: Partial<typeof data>) => {
                 setData((prev) => ({ ...prev, ...updates }));
@@ -266,7 +318,6 @@ const CreateVoucherPurchase = forwardRef<
             [setData],
         );
 
-        // Optimized car plate change handler
         const handleCarPlateChange = useCallback(
             (value: string) => {
                 const upperValue = value.toUpperCase();
@@ -274,92 +325,116 @@ const CreateVoucherPurchase = forwardRef<
                 setData("plate_number", upperValue);
                 setData("car_id", "");
                 setData("car_type_id", "");
-                setData("customer_name", "");
-                setData("customer_phone", "");
+                // Only clear customer if we are in manual tab and it was auto-filled by car
+                if (activeTab === "manual") {
+                    if (selectedCar) {
+                        setData("customer_name", "");
+                        setData("customer_phone", "");
+                    }
+                }
                 setSelectedCar(null);
             },
-            [carPlateSearch, setData],
+            [carPlateSearch, setData, activeTab, selectedCar],
         );
 
-        // Optimized car plate selection handler
         const handleCarPlateSelect = useCallback(
             (result: { car: Car; customer: Customer }) => {
                 carPlateSearch.closeDropdown();
                 carPlateSearch.updateQuery(result.car.plate_number);
                 setSelectedCar(result);
+                setSelectedCustomer(result.customer);
+                setSelectedCustomerCarId(result.car.id);
 
+                // For manual tab, auto mapping customer when car selected
                 updateFormData({
                     car_id: result.car.id,
                     plate_number: result.car.plate_number,
                     car_type_id: result.car.car_type_id
                         ? String(result.car.car_type_id)
                         : "",
-                    customer_name: result.customer?.name || "",
-                    customer_phone: result.customer?.phone || "",
+                    customer_name: result.customer?.name || data.customer_name,
+                    customer_phone:
+                        result.customer?.phone || data.customer_phone,
+                    customer_id: result.customer?.id || data.customer_id,
                 });
             },
-            [carPlateSearch, updateFormData],
+            [carPlateSearch, updateFormData, data],
         );
 
-        // Optimized clear car handler
         const handleClearCar = useCallback(() => {
             setSelectedCar(null);
+            setSelectedCustomerCarId("");
             carPlateSearch.updateQuery("");
             updateFormData({
                 car_id: "",
                 plate_number: "",
                 car_type_id: "",
-                customer_name: "",
-                customer_phone: "",
+                customer_name: activeTab === "manual" ? "" : data.customer_name,
+                customer_phone:
+                    activeTab === "manual" ? "" : data.customer_phone,
+                customer_id: activeTab === "manual" ? "" : data.customer_id,
             });
-        }, [carPlateSearch, updateFormData]);
+        }, [carPlateSearch, updateFormData, activeTab, data]);
 
-        // Optimized form validation
         const validateForm = useCallback(() => {
             const newErrors: Record<string, string> = {};
 
-            if (!data.car_id && !data.plate_number) {
-                newErrors.plate_number =
-                    "Nomor polisi harus diisi atau pilih mobil terdaftar.";
-            }
-            if (!data.car_id && !data.car_type_id) {
-                newErrors.car_type_id = "Tipe mobil wajib dipilih.";
-            }
-
-            if (!data.serial_number) {
-                newErrors.serial_number = "Nomor seri harus diisi.";
+            if (activeTab === "customer") {
+                if (!data.voucher_id) {
+                    newErrors.voucher_id = "Pilih voucher terlebih dahulu.";
+                }
+                if (!data.car_id && !data.plate_number) {
+                    newErrors.plate_number =
+                        "Nomor polisi wajib diisi atau pilih mobil terdaftar.";
+                }
+                if (!data.car_id && !data.car_type_id) {
+                    newErrors.car_type_id =
+                        "Tipe mobil wajib dipilih untuk mobil baru.";
+                }
+            } else {
+                if (!data.serial_number) {
+                    newErrors.serial_number = "Nomor seri harus diisi.";
+                }
+                if (!data.car_id && !data.plate_number) {
+                    newErrors.plate_number =
+                        "Nomor polisi harus diisi atau pilih mobil terdaftar.";
+                }
+                if (!data.car_id && !data.car_type_id) {
+                    newErrors.car_type_id = "Tipe mobil wajib dipilih.";
+                }
+                if (!data.customer_name) {
+                    newErrors.customer_name = "Nama pelanggan wajib diisi.";
+                }
             }
 
             setLocalErrors(newErrors);
             return Object.keys(newErrors).length === 0;
-        }, [
-            data.car_id,
-            data.plate_number,
-            data.car_type_id,
-            data.serial_number,
-        ]);
+        }, [data, activeTab]);
 
-        function checkValidity() {
-            if (!validateForm()) {
+        function checkValidity(serialNumberOverride?: string) {
+            const serialToCheck = serialNumberOverride || data.serial_number;
+
+            if (!serialToCheck) {
+                setLocalErrors({ serial_number: "Nomor seri harus diisi." });
                 return;
             }
 
             setIsSearching(true);
             setSearchError(null);
             setFoundVoucher(null);
+            setLocalErrors({});
 
             axios
                 .get(
-                    `/api/vouchers/check-validity?serial_number=${data.serial_number}`,
+                    `/api/vouchers/check-validity?serial_number=${serialToCheck}`,
                 )
                 .then((response) => {
                     const voucherData = response.data.foundVoucher;
                     setFoundVoucher(voucherData);
+
                     updateFormData({
+                        serial_number: serialToCheck,
                         voucher_id: voucherData.id,
-                        customer_id:
-                            voucherData.purchased_packet?.customer.id || "",
-                        car_id: voucherData.purchased_packet?.car.id || "",
                         purchased_packet_id:
                             voucherData.purchased_packet?.id || "",
                     });
@@ -414,352 +489,852 @@ const CreateVoucherPurchase = forwardRef<
         );
 
         return (
-            <div className="">
-                <form onSubmit={(e) => e.preventDefault()}>
-                    <div className="w-full">
-                        <div className="flex flex-row w-full items-end gap-2 mb-2">
-                            <div className="w-4/5">
-                                <Label htmlFor="serial_number">
-                                    Nomor Seri
-                                </Label>
-                                <Input
-                                    id="serial_number"
-                                    type="text"
-                                    value={data.serial_number}
-                                    onChange={(e) =>
-                                        setData("serial_number", e.target.value)
-                                    }
-                                    placeholder="Nomor Seri..."
+            <div className="space-y-6">
+                {/* Pills Navigation */}
+                <div className="flex p-1 bg-muted rounded-xl gap-1 overflow-x-auto w-full md:w-max">
+                    <button
+                        onClick={() => switchTab("customer")}
+                        className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            activeTab === "customer"
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:bg-muted-foreground/10"
+                        }`}
+                    >
+                        <UserSearch className="w-4 h-4" />
+                        Cari Pelanggan
+                    </button>
+                    <button
+                        onClick={() => switchTab("manual")}
+                        className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            activeTab === "manual"
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:bg-muted-foreground/10"
+                        }`}
+                    >
+                        <FileSearch className="w-4 h-4" />
+                        Cek Manual
+                    </button>
+                </div>
+
+                {activeTab === "customer" && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="space-y-2">
+                            <Label>Pilih Pelanggan</Label>
+                            <div className="flex gap-2 relative">
+                                <div className="flex-1">
+                                    <CustomerSearch
+                                        value={customerSearch.query}
+                                        onValueChange={(val) =>
+                                            customerSearch.updateQuery(val)
+                                        }
+                                        searchResults={customerSearch.results}
+                                        isSearching={customerSearch.isSearching}
+                                        showDropdown={
+                                            customerSearch.showDropdown
+                                        }
+                                        onFocus={customerSearch.openDropdown}
+                                        onSelect={handleCustomerSelect}
+                                        onCloseDropdown={
+                                            customerSearch.closeDropdown
+                                        }
+                                    />
+                                </div>
+                                {isFetchingVouchers && (
+                                    <Button
+                                        disabled
+                                        variant="outline"
+                                        className="shrink-0"
+                                    >
+                                        <LoaderCircle className="w-4 h-4 animate-spin md:mr-2" />
+                                        <span className="hidden md:inline">
+                                            Mencari...
+                                        </span>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {hasSearchedCustomer && !isFetchingVouchers && (
+                            <div className="space-y-4">
+                                <Label>Voucher Pelanggan</Label>
+                                {customerVouchers.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {customerVouchers.map((v) => (
+                                            <div
+                                                key={v.id}
+                                                className={`border rounded-xl p-4 shadow-sm cursor-pointer transition-all ${
+                                                    data.serial_number ===
+                                                    v.serial_number
+                                                        ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20"
+                                                        : "bg-card hover:border-blue-400 hover:bg-slate-50"
+                                                }`}
+                                                onClick={() =>
+                                                    checkValidity(
+                                                        v.serial_number,
+                                                    )
+                                                }
+                                            >
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <Badge
+                                                        variant={
+                                                            v.status ===
+                                                            "Active"
+                                                                ? "default"
+                                                                : "secondary"
+                                                        }
+                                                    >
+                                                        {v.status}
+                                                    </Badge>
+                                                    <span className="text-sm font-bold text-slate-700">
+                                                        {v.serial_number}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs space-y-1.5 text-slate-600">
+                                                    <div>
+                                                        <span className="text-muted-foreground">
+                                                            Tipe:
+                                                        </span>{" "}
+                                                        <span className="font-medium">
+                                                            {
+                                                                v.voucher_type
+                                                                    ?.name
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    {v.purchased_packet && (
+                                                        <>
+                                                            <div>
+                                                                <span className="text-muted-foreground">
+                                                                    Paket:
+                                                                </span>{" "}
+                                                                <span className="font-medium">
+                                                                    {
+                                                                        v
+                                                                            .purchased_packet
+                                                                            ?.voucher_packet
+                                                                            ?.name
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-muted-foreground">
+                                                                    Mobil:
+                                                                </span>{" "}
+                                                                <span className="font-medium">
+                                                                    {
+                                                                        v
+                                                                            .purchased_packet
+                                                                            ?.car
+                                                                            ?.plate_number
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center border rounded-xl bg-muted/20 border-dashed">
+                                        <span className="text-muted-foreground text-sm font-medium">
+                                            Tidak ada Voucher yang ditemukan
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {localErrors.voucher_id && (
+                            <p className="text-sm text-red-600 mt-2">
+                                {localErrors.voucher_id}
+                            </p>
+                        )}
+
+                        {foundVoucher && (
+                            <div className="p-4 border rounded-xl bg-slate-50/50 space-y-4 animate-in fade-in duration-300">
+                                <Heading
+                                    title="Pilih Kendaraan"
+                                    className="text-lg"
                                 />
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Mobil Pelanggan</Label>
+                                        <Select
+                                            value={selectedCustomerCarId}
+                                            onValueChange={(val) => {
+                                                setSelectedCustomerCarId(val);
+                                                if (val === "NEW") {
+                                                    updateFormData({
+                                                        car_id: "",
+                                                        plate_number: "",
+                                                        car_type_id: "",
+                                                    });
+                                                } else {
+                                                    const selected =
+                                                        selectedCustomer?.cars?.find(
+                                                            (c) => c.id === val,
+                                                        );
+                                                    if (selected) {
+                                                        updateFormData({
+                                                            car_id: selected.id,
+                                                            plate_number:
+                                                                selected.plate_number,
+                                                            car_type_id:
+                                                                selected.car_type_id
+                                                                    ? String(
+                                                                          selected.car_type_id,
+                                                                      )
+                                                                    : "",
+                                                        });
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih mobil atau tambah baru..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {selectedCustomer?.cars?.map(
+                                                    (car) => (
+                                                        <SelectItem
+                                                            key={car.id}
+                                                            value={car.id}
+                                                        >
+                                                            {car.plate_number} -{" "}
+                                                            {car.model}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                                <SelectItem
+                                                    value="NEW"
+                                                    className="font-semibold text-blue-600"
+                                                >
+                                                    + Tambah Kendaraan Baru
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {selectedCustomerCarId === "NEW" && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor="new_plate_number"
+                                                    required
+                                                >
+                                                    Nomor Polisi
+                                                </Label>
+                                                <Input
+                                                    id="new_plate_number"
+                                                    value={data.plate_number}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "plate_number",
+                                                            e.target.value.toUpperCase(),
+                                                        )
+                                                    }
+                                                    placeholder="Contoh: B1234XYZ"
+                                                />
+                                                {(errors.plate_number ||
+                                                    localErrors.plate_number) && (
+                                                    <p className="text-sm text-red-600">
+                                                        {errors.plate_number ||
+                                                            localErrors.plate_number}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor="new_car_type_id"
+                                                    required
+                                                >
+                                                    Tipe Mobil
+                                                </Label>
+                                                <Select
+                                                    value={
+                                                        data.car_type_id || ""
+                                                    }
+                                                    onValueChange={(val) =>
+                                                        setData(
+                                                            "car_type_id",
+                                                            val,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger id="new_car_type_id">
+                                                        <SelectValue placeholder="Pilih tipe mobil..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {carTypes.map(
+                                                            (type) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        type.id
+                                                                    }
+                                                                    value={String(
+                                                                        type.id,
+                                                                    )}
+                                                                >
+                                                                    {type.name}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {(errors.car_type_id ||
+                                                    localErrors.car_type_id) && (
+                                                    <p className="text-sm text-red-600">
+                                                        {errors.car_type_id ||
+                                                            localErrors.car_type_id}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === "manual" && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                checkValidity();
+                            }}
+                        >
+                            <div className="space-y-2">
+                                <Label htmlFor="serial_number">
+                                    Nomor Seri Voucher
+                                </Label>
+                                <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                                    <div className="flex-1">
+                                        <Input
+                                            id="serial_number"
+                                            type="text"
+                                            value={data.serial_number}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "serial_number",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Masukkan Nomor Seri..."
+                                            className="h-11"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        id="check-voucher-btn"
+                                        disabled={isSearching || processing}
+                                        className="h-11 px-8"
+                                    >
+                                        {isSearching ? (
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            "Check Voucher"
+                                        )}
+                                    </Button>
+                                </div>
                                 {(errors.serial_number ||
-                                    localErrors.serial_number) && (
+                                    localErrors.serial_number ||
+                                    searchError) && (
                                     <p className="text-sm text-red-600">
                                         {errors.serial_number ||
-                                            localErrors.serial_number}
+                                            localErrors.serial_number ||
+                                            searchError}
                                     </p>
                                 )}
                             </div>
+                        </form>
 
-                            <Button
-                                disabled={isSearching || processing}
-                                className="w-1/5"
-                                onClick={checkValidity}
-                            >
-                                {isSearching ? (
-                                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    "Check"
-                                )}
-                            </Button>
-                        </div>
-                    </div>
-                </form>
-
-                <div className="mb-4">
-                    <div className="mb-4">
-                        <Label htmlFor="plate_number" required>
-                            Nomor Polisi
-                        </Label>
-                        <CarPlateSearch
-                            value={carPlateSearch.query}
-                            onValueChange={handleCarPlateChange}
-                            searchResults={carPlateSearch.results}
-                            isSearching={carPlateSearch.isSearching}
-                            showDropdown={carPlateSearch.showDropdown}
-                            onFocus={carPlateSearch.openDropdown}
-                            onSelect={handleCarPlateSelect}
-                            onCloseDropdown={carPlateSearch.closeDropdown}
-                        />
-                        {(errors.plate_number || localErrors.plate_number) && (
-                            <p className="text-sm text-red-600">
-                                {errors.plate_number ||
-                                    localErrors.plate_number}
-                            </p>
-                        )}
-                    </div>
-
-                    {selectedCar && carPlateSearch.query && (
-                        <div className="mb-2 p-2 border rounded text-blue-700 text-sm flex items-center justify-between">
-                            <span>
-                                Mobil terdaftar berdasarkan plat nomor:{" "}
-                                <b>{selectedCar.car.plate_number}</b>
-                            </span>
-                            <button
-                                className="ml-2 text-xs underline"
-                                onClick={handleClearCar}
-                                type="button"
-                            >
-                                Kosongkan
-                            </button>
-                        </div>
-                    )}
-
-                    {selectedCar ? (
-                        <CarInformationCard
-                            car={selectedCar.car}
-                            customer={selectedCar.customer}
-                        />
-                    ) : data.plate_number ? (
-                        <div className="border rounded-lg p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <Label htmlFor="customer_name">
-                                        Nama Pelanggan
-                                    </Label>
-                                    <Input
-                                        id="customer_name"
-                                        value={data.customer_name}
-                                        onChange={(e) => {
-                                            setData(
-                                                "customer_name",
-                                                e.target.value,
-                                            );
-                                        }}
-                                        disabled={!!selectedCar}
-                                    />
-                                    {errors.customer_name && (
-                                        <p className="text-sm text-red-600">
-                                            {errors.customer_name}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <Label htmlFor="customer_phone">
-                                        Nomor Telepon
-                                    </Label>
-                                    <Input
-                                        id="customer_phone"
-                                        value={data.customer_phone}
-                                        onChange={(e) => {
-                                            setData(
-                                                "customer_phone",
-                                                e.target.value,
-                                            );
-                                        }}
-                                        disabled={!!selectedCar}
-                                    />
-                                    {errors.customer_phone && (
-                                        <p className="text-sm text-red-600">
-                                            {errors.customer_phone}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="car_type_id" required>
-                                        Tipe Mobil
-                                    </Label>
-                                    <Select
-                                        onValueChange={(value) => {
-                                            if (data.car_id)
-                                                setData("car_id", "");
-                                            setData("car_type_id", value);
-                                        }}
-                                        value={data.car_type_id || ""}
-                                        disabled={!!selectedCar}
-                                    >
-                                        <SelectTrigger id="car_type_id">
-                                            <SelectValue placeholder="Pilih tipe mobil..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {carTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.id}
-                                                    value={String(type.id)}
-                                                >
-                                                    {type.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {(errors.car_type_id ||
-                                        localErrors.car_type_id) && (
-                                        <p className="text-sm text-red-600 mt-1">
-                                            {errors.car_type_id ||
-                                                localErrors.car_type_id}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
-                </div>
-
-                {/* Inventory Items Selection Checklist */}
-                {items && items.length > 0 && (
-                    <div className="space-y-3 border p-4 rounded-lg bg-muted/20 mt-6 mb-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div>
-                                <Label className="text-sm font-semibold text-foreground">
-                                    Barang / Item Pelengkap (Tissue, Parfum,
-                                    dll)
-                                </Label>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Pilih barang yang diberikan ke customer.
-                                </p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsItemModalOpen(true)}
-                                className="flex items-center gap-2 border-blue-500/30 text-blue-600 hover:text-blue-700 hover:bg-blue-50/50"
-                            >
-                                <ShoppingCart className="w-4 h-4" />
-                                Kelola Barang ({selectedItems.length} Terpilih)
-                            </Button>
-                        </div>
-
-                        {selectedItems.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-dashed">
-                                {items
-                                    .filter((item) =>
-                                        selectedItems.includes(item.id),
-                                    )
-                                    .map((item) => {
-                                        const isBound =
-                                            selectedProduct?.items?.some(
-                                                (i) => i.id === item.id,
-                                            ) || false;
-                                        return (
-                                            <Badge
-                                                key={item.id}
-                                                variant="secondary"
-                                                className="flex items-center gap-1.5 py-1"
-                                            >
-                                                {item.name}
-                                                {isBound ? (
-                                                    <span className="text-[9px] text-blue-500 font-bold uppercase">
-                                                        (Bawaan)
+                        {foundVoucher && (
+                            <div className="space-y-6 pt-2 animate-in fade-in duration-300">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Customer Section */}
+                                    <div className="p-4 border rounded-xl bg-slate-50/50 space-y-4">
+                                        <Heading
+                                            title="Data Pelanggan"
+                                            className="text-lg"
+                                        />
+                                        {data.customer_id ? (
+                                            <div className="p-4 border border-blue-200 bg-blue-50/50 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+                                                <div>
+                                                    <span className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1 block">
+                                                        Pelanggan Terpilih
                                                     </span>
-                                                ) : (
-                                                    <span className="text-[9px] text-emerald-600 font-bold">
-                                                        (+
-                                                        {currencyFormatter.format(
-                                                            item.price || 0,
-                                                        )}
-                                                        )
-                                                    </span>
+                                                    <div className="font-medium text-slate-800">
+                                                        {data.customer_name}
+                                                    </div>
+                                                    {data.customer_phone && (
+                                                        <div className="text-sm text-slate-500 mt-0.5">
+                                                            {
+                                                                data.customer_phone
+                                                            }
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {!selectedCar && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-100/50"
+                                                        onClick={() => {
+                                                            customerSearch.updateQuery(
+                                                                "",
+                                                            );
+                                                            setSelectedCustomer(
+                                                                null,
+                                                            );
+                                                            setSelectedCustomerCarId(
+                                                                "",
+                                                            );
+                                                            updateFormData({
+                                                                customer_id: "",
+                                                                customer_name:
+                                                                    "",
+                                                                customer_phone:
+                                                                    "",
+                                                            });
+                                                        }}
+                                                        type="button"
+                                                    >
+                                                        Ganti
+                                                    </Button>
                                                 )}
-                                            </Badge>
-                                        );
-                                    })}
-                            </div>
-                        )}
-
-                        {/* Modal for selecting items */}
-                        <Modal
-                            open={isItemModalOpen}
-                            onClose={() => setIsItemModalOpen(false)}
-                            className="max-w-2xl p-6"
-                        >
-                            <ModalHeader title="Pilih Barang / Item Pelengkap" />
-                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 mt-4">
-                                <p className="text-xs text-muted-foreground">
-                                    Centang barang-barang tambahan di bawah.
-                                    Barang bawaan (included) tercentang secara
-                                    default.
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {items.map((item) => {
-                                        const isChecked =
-                                            selectedItems.includes(item.id);
-                                        const isBound =
-                                            selectedProduct?.items?.some(
-                                                (i) => i.id === item.id,
-                                            ) || false;
-
-                                        return (
-                                            <div
-                                                key={item.id}
-                                                className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
-                                                    isChecked
-                                                        ? "border-blue-200 bg-blue-50/30"
-                                                        : "border-muted bg-card hover:bg-muted/30"
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Checkbox
-                                                        id={`item-modal-${item.id}`}
-                                                        checked={isChecked}
-                                                        onCheckedChange={(
-                                                            checked,
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label>
+                                                        Cari Pelanggan
+                                                        (Opsional)
+                                                    </Label>
+                                                    <CustomerSearch
+                                                        value={
+                                                            customerSearch.query
+                                                        }
+                                                        onValueChange={(val) =>
+                                                            customerSearch.updateQuery(
+                                                                val,
+                                                            )
+                                                        }
+                                                        searchResults={
+                                                            customerSearch.results
+                                                        }
+                                                        isSearching={
+                                                            customerSearch.isSearching
+                                                        }
+                                                        showDropdown={
+                                                            customerSearch.showDropdown
+                                                        }
+                                                        onFocus={
+                                                            customerSearch.openDropdown
+                                                        }
+                                                        onSelect={(
+                                                            customer,
                                                         ) => {
-                                                            if (checked) {
-                                                                setSelectedItems(
-                                                                    [
-                                                                        ...selectedItems,
-                                                                        item.id,
-                                                                    ],
+                                                            customerSearch.updateQuery(
+                                                                customer.name,
+                                                            );
+                                                            customerSearch.closeDropdown();
+                                                            setSelectedCustomer(
+                                                                customer,
+                                                            );
+                                                            updateFormData({
+                                                                customer_id:
+                                                                    customer.id,
+                                                                customer_name:
+                                                                    customer.name,
+                                                                customer_phone:
+                                                                    customer.phone,
+                                                            });
+                                                        }}
+                                                        onCloseDropdown={
+                                                            customerSearch.closeDropdown
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label
+                                                            htmlFor="manual_customer_name"
+                                                            required
+                                                        >
+                                                            Nama Pelanggan Baru
+                                                        </Label>
+                                                        <Input
+                                                            id="manual_customer_name"
+                                                            value={
+                                                                data.customer_name
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    "customer_name",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                !!selectedCar
+                                                            }
+                                                        />
+                                                        {errors.customer_name && (
+                                                            <p className="text-sm text-red-600">
+                                                                {
+                                                                    errors.customer_name
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="manual_customer_phone">
+                                                            Nomor Telepon
+                                                        </Label>
+                                                        <Input
+                                                            id="manual_customer_phone"
+                                                            value={
+                                                                data.customer_phone
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    "customer_phone",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                !!selectedCar
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Car Section */}
+                                    <div className="p-4 border rounded-xl bg-slate-50/50 space-y-4">
+                                        <Heading
+                                            title="Data Kendaraan"
+                                            className="text-lg"
+                                        />
+
+                                        {selectedCustomer &&
+                                            selectedCustomer.cars &&
+                                            selectedCustomer.cars.length >
+                                                0 && (
+                                                <div className="space-y-2">
+                                                    <Label>
+                                                        Pilih Kendaraan
+                                                        Terdaftar
+                                                    </Label>
+                                                    <Select
+                                                        value={
+                                                            selectedCustomerCarId
+                                                        }
+                                                        onValueChange={(
+                                                            val,
+                                                        ) => {
+                                                            setSelectedCustomerCarId(
+                                                                val,
+                                                            );
+                                                            if (val === "new") {
+                                                                updateFormData({
+                                                                    car_id: "",
+                                                                    plate_number:
+                                                                        "",
+                                                                    car_type_id:
+                                                                        "",
+                                                                });
+                                                                carPlateSearch.updateQuery(
+                                                                    "",
                                                                 );
                                                             } else {
-                                                                setSelectedItems(
-                                                                    selectedItems.filter(
-                                                                        (id) =>
-                                                                            id !==
-                                                                            item.id,
-                                                                    ),
-                                                                );
+                                                                const selected =
+                                                                    selectedCustomer?.cars?.find(
+                                                                        (c) =>
+                                                                            c.id ===
+                                                                            val,
+                                                                    );
+                                                                if (selected) {
+                                                                    updateFormData(
+                                                                        {
+                                                                            car_id: selected.id,
+                                                                            plate_number:
+                                                                                selected.plate_number,
+                                                                            car_type_id:
+                                                                                selected.car_type_id
+                                                                                    ? String(
+                                                                                          selected.car_type_id,
+                                                                                      )
+                                                                                    : "",
+                                                                        },
+                                                                    );
+                                                                    carPlateSearch.updateQuery(
+                                                                        selected.plate_number,
+                                                                    );
+                                                                }
                                                             }
                                                         }}
-                                                    />
-                                                    <Label
-                                                        htmlFor={`item-modal-${item.id}`}
-                                                        className="cursor-pointer font-medium text-sm flex flex-col"
                                                     >
-                                                        <span>{item.name}</span>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Pilih mobil..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {selectedCustomer.cars.map(
+                                                                (car) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            car.id
+                                                                        }
+                                                                        value={
+                                                                            car.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            car.plate_number
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                            <SelectItem value="new">
+                                                                Tambah Kendaraan
+                                                                Baru
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
+
+                                        {(!selectedCustomer ||
+                                            !selectedCustomer.cars ||
+                                            selectedCustomer.cars.length ===
+                                                0 ||
+                                            selectedCustomerCarId ===
+                                                "new") && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label
+                                                        htmlFor="plate_number"
+                                                        required
+                                                    >
+                                                        Cari / Input Nomor
+                                                        Polisi
+                                                    </Label>
+                                                    <CarPlateSearch
+                                                        value={
+                                                            carPlateSearch.query
+                                                        }
+                                                        onValueChange={
+                                                            handleCarPlateChange
+                                                        }
+                                                        searchResults={
+                                                            carPlateSearch.results
+                                                        }
+                                                        isSearching={
+                                                            carPlateSearch.isSearching
+                                                        }
+                                                        showDropdown={
+                                                            carPlateSearch.showDropdown
+                                                        }
+                                                        onFocus={
+                                                            carPlateSearch.openDropdown
+                                                        }
+                                                        onSelect={
+                                                            handleCarPlateSelect
+                                                        }
+                                                        onCloseDropdown={
+                                                            carPlateSearch.closeDropdown
+                                                        }
+                                                    />
+                                                    {(errors.plate_number ||
+                                                        localErrors.plate_number) && (
+                                                        <p className="text-sm text-red-600">
+                                                            {errors.plate_number ||
+                                                                localErrors.plate_number}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {selectedCar &&
+                                                carPlateSearch.query ? (
+                                                    <div className="p-3 border border-blue-200 bg-blue-50/50 rounded-lg text-blue-700 text-sm flex items-center justify-between">
+                                                        <span>
+                                                            Mobil ditemukan:{" "}
+                                                            <b>
+                                                                {
+                                                                    selectedCar
+                                                                        .car
+                                                                        .plate_number
+                                                                }
+                                                            </b>
+                                                        </span>
+                                                        <button
+                                                            className="ml-2 text-xs font-semibold underline hover:text-blue-800"
+                                                            onClick={
+                                                                handleClearCar
+                                                            }
+                                                            type="button"
+                                                        >
+                                                            Kosongkan
+                                                        </button>
+                                                    </div>
+                                                ) : data.plate_number ? (
+                                                    <div className="space-y-2">
+                                                        <Label
+                                                            htmlFor="car_type_id"
+                                                            required
+                                                        >
+                                                            Tipe Mobil
+                                                        </Label>
+                                                        <Select
+                                                            value={
+                                                                data.car_type_id ||
+                                                                ""
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) => {
+                                                                if (data.car_id)
+                                                                    setData(
+                                                                        "car_id",
+                                                                        "",
+                                                                    );
+                                                                setData(
+                                                                    "car_type_id",
+                                                                    value,
+                                                                );
+                                                            }}
+                                                            disabled={
+                                                                !!selectedCar
+                                                            }
+                                                        >
+                                                            <SelectTrigger id="car_type_id">
+                                                                <SelectValue placeholder="Pilih tipe mobil..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {carTypes.map(
+                                                                    (type) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                type.id
+                                                                            }
+                                                                            value={String(
+                                                                                type.id,
+                                                                            )}
+                                                                        >
+                                                                            {
+                                                                                type.name
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {(errors.car_type_id ||
+                                                            localErrors.car_type_id) && (
+                                                            <p className="text-sm text-red-600 mt-1">
+                                                                {errors.car_type_id ||
+                                                                    localErrors.car_type_id}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Shared Sections (Items & Details) */}
+                {foundVoucher && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        {/* Inventory Items Selection Checklist */}
+                        {items && items.length > 0 && (
+                            <div className="border p-5 rounded-xl bg-muted/10">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                    <div>
+                                        <Label className="text-sm font-semibold text-foreground">
+                                            Barang / Item Pelengkap
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Pilih barang yang diberikan ke
+                                            customer.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsItemModalOpen(true)}
+                                        className="flex items-center gap-2 border-blue-200 text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                                    >
+                                        <ShoppingCart className="w-4 h-4" />
+                                        Kelola Barang ({
+                                            selectedItems.length
+                                        }{" "}
+                                        Terpilih)
+                                    </Button>
+                                </div>
+
+                                {selectedItems.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-dashed">
+                                        {items
+                                            .filter((item) =>
+                                                selectedItems.includes(item.id),
+                                            )
+                                            .map((item) => {
+                                                const isBound =
+                                                    selectedProduct?.items?.some(
+                                                        (i) => i.id === item.id,
+                                                    ) || false;
+                                                return (
+                                                    <Badge
+                                                        key={item.id}
+                                                        variant="secondary"
+                                                        className="flex items-center gap-1.5 py-1.5 px-3"
+                                                    >
+                                                        {item.name}
                                                         {isBound ? (
-                                                            <span className="text-[10px] text-blue-500 font-semibold uppercase tracking-wider mt-0.5">
-                                                                Bawaan Layanan
-                                                                (Rp 0)
+                                                            <span className="text-[10px] text-blue-500 font-bold uppercase">
+                                                                (Bawaan)
                                                             </span>
                                                         ) : (
-                                                            <span className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                                                            <span className="text-[10px] text-emerald-600 font-bold">
+                                                                (+
                                                                 {currencyFormatter.format(
                                                                     item.price ||
                                                                         0,
                                                                 )}
+                                                                )
                                                             </span>
                                                         )}
-                                                    </Label>
-                                                </div>
-                                                <Badge
-                                                    variant={
-                                                        item.stock === 0
-                                                            ? "destructive"
-                                                            : "outline"
-                                                    }
-                                                    className="text-xs shrink-0"
-                                                >
-                                                    Stok: {item.stock}
-                                                </Badge>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                                    </Badge>
+                                                );
+                                            })}
+                                    </div>
+                                )}
                             </div>
-                            <div className="mt-6 flex justify-end">
-                                <Button
-                                    type="button"
-                                    onClick={() => setIsItemModalOpen(false)}
-                                >
-                                    Selesai
-                                </Button>
-                            </div>
-                        </Modal>
-                    </div>
-                )}
+                        )}
 
-                <div>
-                    <Heading title="Informasi Voucher" className="mt-4" />
-                    {foundVoucher ? (
-                        <div className=" rounded-lg shadow p-4 mt-2 border space-y-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-muted-foreground font-medium">
+                        <div className="border rounded-xl shadow-sm p-5 bg-card space-y-4">
+                            <Heading
+                                title="Informasi Voucher"
+                                className="text-lg mb-2"
+                            />
+                            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                <span className="text-muted-foreground font-medium text-sm">
                                     Status:
                                 </span>
                                 <span
-                                    className={`text-2xl font-bold ${
+                                    className={`text-xl font-bold ${
                                         foundVoucher.status === "Active" ||
                                         foundVoucher.status === "Sold"
                                             ? "text-primary"
@@ -769,28 +1344,29 @@ const CreateVoucherPurchase = forwardRef<
                                     {foundVoucher.status}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
                                 <div>
-                                    <span className="text-muted-foreground">
+                                    <span className="text-muted-foreground block mb-1">
                                         Nomor Seri:
                                     </span>
-                                    <div className="font-medium">
+                                    <div className="font-semibold text-slate-800">
                                         {foundVoucher.serial_number}
                                     </div>
                                 </div>
                                 <div>
-                                    <span className="text-muted-foreground">
+                                    <span className="text-muted-foreground block mb-1">
                                         Tipe:
                                     </span>
-                                    <div className="font-medium">
+                                    <div className="font-semibold text-slate-800">
                                         {foundVoucher.voucher_type.name}
                                     </div>
                                 </div>
                                 <div>
-                                    <span className="text-muted-foreground">
+                                    <span className="text-muted-foreground block mb-1">
                                         Tanggal Expired:
                                     </span>
-                                    <div className="font-medium text-emerald-600 dark:text-emerald-400">
+                                    <div className="font-semibold text-emerald-600">
                                         {foundVoucher.purchased_packet
                                             ?.expired_at ||
                                             foundVoucher.expired_at ||
@@ -800,10 +1376,10 @@ const CreateVoucherPurchase = forwardRef<
                                 {foundVoucher.purchased_packet && (
                                     <>
                                         <div>
-                                            <span className="text-muted-foreground">
+                                            <span className="text-muted-foreground block mb-1">
                                                 Nama Paket:
                                             </span>
-                                            <div className="font-medium">
+                                            <div className="font-semibold text-slate-800">
                                                 {
                                                     foundVoucher
                                                         .purchased_packet.name
@@ -811,22 +1387,10 @@ const CreateVoucherPurchase = forwardRef<
                                             </div>
                                         </div>
                                         <div>
-                                            <span className="text-muted-foreground">
-                                                Tanggal Pembelian:
+                                            <span className="text-muted-foreground block mb-1">
+                                                Customer dari Paket:
                                             </span>
-                                            <div className="font-medium">
-                                                {
-                                                    foundVoucher
-                                                        .purchased_packet
-                                                        .purchased_at
-                                                }
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span className="text-muted-foreground">
-                                                Nama Customer:
-                                            </span>
-                                            <div className="font-medium">
+                                            <div className="font-semibold text-slate-800">
                                                 {
                                                     foundVoucher
                                                         .purchased_packet
@@ -834,44 +1398,122 @@ const CreateVoucherPurchase = forwardRef<
                                                 }
                                             </div>
                                         </div>
-                                        <div>
-                                            <span className="text-muted-foreground">
-                                                Nomor Polisi:
-                                            </span>
-                                            <div className="font-medium">
-                                                {foundVoucher.purchased_packet
-                                                    .car?.plate_number || "-"}
-                                            </div>
-                                        </div>
                                     </>
                                 )}
                             </div>
+
                             {foundVoucher.is_expired ? (
-                                <div className="mt-2 text-sm text-red-600 font-semibold">
+                                <div className="mt-4 p-3 bg-red-50 border border-red-200 text-sm text-red-600 font-semibold rounded-lg">
                                     Voucher ini sudah kadaluarsa.
                                 </div>
                             ) : !(
                                   foundVoucher.status === "Active" ||
                                   foundVoucher.status === "Sold"
                               ) ? (
-                                <div className="mt-2 text-sm text-red-600 font-semibold">
+                                <div className="mt-4 p-3 bg-red-50 border border-red-200 text-sm text-red-600 font-semibold rounded-lg">
                                     Voucher tidak dapat digunakan. Status harus
                                     "Active" atau "Sold".
                                 </div>
                             ) : null}
                         </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">
-                            Masukkan nomor seri dan klik "Check" untuk melihat
-                            detail.
-                            {searchError && (
-                                <p className="text-sm text-red-500">
-                                    {searchError}
-                                </p>
-                            )}
+                    </div>
+                )}
+
+                {/* Shared Modal for Items */}
+                <Modal
+                    open={isItemModalOpen}
+                    onClose={() => setIsItemModalOpen(false)}
+                    className="max-w-2xl p-6"
+                >
+                    <ModalHeader title="Pilih Barang / Item Pelengkap" />
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 mt-4">
+                        <p className="text-xs text-muted-foreground">
+                            Centang barang-barang tambahan di bawah. Barang
+                            bawaan (included) tercentang secara default.
                         </p>
-                    )}
-                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {items.map((item) => {
+                                const isChecked = selectedItems.includes(
+                                    item.id,
+                                );
+                                const isBound =
+                                    selectedProduct?.items?.some(
+                                        (i) => i.id === item.id,
+                                    ) || false;
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+                                            isChecked
+                                                ? "border-blue-200 bg-blue-50/30 ring-1 ring-blue-500/20"
+                                                : "border-muted bg-card hover:bg-muted/30"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id={`item-modal-${item.id}`}
+                                                checked={isChecked}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedItems([
+                                                            ...selectedItems,
+                                                            item.id,
+                                                        ]);
+                                                    } else {
+                                                        setSelectedItems(
+                                                            selectedItems.filter(
+                                                                (id) =>
+                                                                    id !==
+                                                                    item.id,
+                                                            ),
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Label
+                                                htmlFor={`item-modal-${item.id}`}
+                                                className="cursor-pointer font-medium text-sm flex flex-col gap-0.5"
+                                            >
+                                                <span className="text-slate-800">
+                                                    {item.name}
+                                                </span>
+                                                {isBound ? (
+                                                    <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">
+                                                        Bawaan Layanan (Rp 0)
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[11px] text-emerald-600 font-semibold">
+                                                        {currencyFormatter.format(
+                                                            item.price || 0,
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <Badge
+                                            variant={
+                                                item.stock === 0
+                                                    ? "destructive"
+                                                    : "outline"
+                                            }
+                                            className="text-xs shrink-0 bg-background"
+                                        >
+                                            Stok: {item.stock}
+                                        </Badge>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <Button
+                            type="button"
+                            onClick={() => setIsItemModalOpen(false)}
+                        >
+                            Selesai
+                        </Button>
+                    </div>
+                </Modal>
             </div>
         );
     },

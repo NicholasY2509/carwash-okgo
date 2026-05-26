@@ -170,13 +170,23 @@ const allNavItems = {
             permission: "master staff",
             items: [
                 {
-                    title: "Insentif Staf",
+                    title: "Insentif SPV (Owner)",
                     url: "/staff-incentives/summary",
                     permission: "staff incentive summary",
                 },
                 {
-                    title: "Insentif Staf (SPV)",
+                    title: "Insentif SPV",
                     url: "/staff-incentives",
+                    permission: "staff incentive",
+                },
+                {
+                    title: "Insentif Staff",
+                    url: "/staff-level-incentives",
+                    permission: "staff incentive",
+                },
+                {
+                    title: "Insentif Kasir",
+                    url: "/cashier-incentives",
                     permission: "staff incentive",
                 },
                 {
@@ -260,8 +270,18 @@ const allNavItems = {
                     permission: "permission",
                 },
                 {
-                    title: "Master Insentif",
+                    title: "Master Insentif SPV",
                     url: "/settings/incentive-tiers",
+                    permission: "incentive tier",
+                },
+                {
+                    title: "Master Insentif Staff",
+                    url: "/settings/staff-incentive-tiers",
+                    permission: "incentive tier",
+                },
+                {
+                    title: "Master Insentif Kasir",
+                    url: "/settings/cashier-incentive-tiers",
                     permission: "incentive tier",
                 },
                 {

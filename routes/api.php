@@ -27,6 +27,7 @@ Route::controller(CustomerController::class)->group(function () {
 
 Route::controller(VoucherController::class)->group(function () {
     Route::get('/vouchers/check-validity', 'checkValidity')->name('api.getVoucher');
+    Route::get('/vouchers/customer/{customer_id}', 'getCustomerVouchers')->name('api.getCustomerVouchers');
     Route::get('/vouchers/available', 'getAvailableVouchers')->name('api.getAvailableVouchers');
 });
 

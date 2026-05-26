@@ -222,6 +222,31 @@ class VoucherController extends Controller
         return response()->json($responseData, 200);
     }
 
+    public function getCustomerVouchers($customer_id)
+    {
+        $vouchers = Voucher::with(['voucherType', 'purchasedPacket.voucherPacket', 'purchasedPacket.car'])
+            ->whereHas('purchasedPacket', function ($query) use ($customer_id) {
+                $query->where('customer_id', $customer_id);
+            })
+            ->whereIn('status', ['Active', 'Sold'])
+            ->get();
+
+        // filter not expired
+        $validVouchers = [];
+        foreach ($vouchers as $voucher) {
+            $isExpired = false;
+            $expiryDate = $voucher->purchasedPacket ? $voucher->purchasedPacket->expired_at : $voucher->expired_at;
+            if ($expiryDate && now()->startOfDay()->gt($expiryDate->startOfDay())) {
+                $isExpired = true;
+            }
+            if (!$isExpired) {
+                $validVouchers[] = $voucher;
+            }
+        }
+
+        return response()->json($validVouchers, 200);
+    }
+
     public function getAvailableVouchers(Request $request)
     {
         $request->validate([

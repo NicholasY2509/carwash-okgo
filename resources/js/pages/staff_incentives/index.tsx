@@ -67,7 +67,7 @@ export default function StaffIncentivesIndex() {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Staff", href: "/staffs" },
-        { title: "Insentif Staff", href: "/staff-incentives" },
+        { title: "Insentif SPV", href: "/staff-incentives" },
     ];
 
     const handleFilter = () => {
@@ -190,13 +190,13 @@ export default function StaffIncentivesIndex() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Insentif Staff" />
+            <Head title="Insentif SPV" />
             <div className="flex h-full flex-1 flex-col space-y-6 rounded-xl p-4 lg:p-6">
                 
                 {/* Header Section */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <Heading
-                        title="Insentif Cucian Staff"
+                        title="Insentif Cucian SPV"
                         description="Laporan detail hasil cuci mobil per staff dan komisi insentif berdasarkan target tier."
                     />
                     

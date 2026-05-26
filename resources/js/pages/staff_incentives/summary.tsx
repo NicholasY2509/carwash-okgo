@@ -36,7 +36,7 @@ export default function StaffIncentivesSummary() {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Staff", href: "/staffs" },
-        { title: "Insentif Staff (Owner)", href: "/staff-incentives/summary" },
+        { title: "Insentif SPV (Owner)", href: "/staff-incentives/summary" },
     ];
 
     const handleFilter = () => {
@@ -146,11 +146,11 @@ export default function StaffIncentivesSummary() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Ringkasan Insentif Staff (Owner)" />
+            <Head title="Ringkasan Insentif SPV (Owner)" />
             <div className="flex h-full flex-1 flex-col space-y-6 rounded-xl p-4 lg:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <Heading
-                        title="Ringkasan Insentif Staff (Owner)"
+                        title="Ringkasan Insentif SPV (Owner)"
                         description="Laporan ringkas total pendapatan kotor dan insentif per staff."
                     />
 
