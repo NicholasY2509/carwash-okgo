@@ -85,7 +85,8 @@ class SendWhatsAppReceiptJob implements ShouldQueue
                     foreach ($packet->vouchers as $voucher) {
                         $vouchers[] = [
                             'serial_number' => $voucher->serial_number,
-                            'base64_barcode' => base64_encode($generator->getBarcode($voucher->serial_number, $generator::TYPE_CODE_128))
+                            'base64_barcode' => base64_encode($generator->getBarcode($voucher->serial_number, $generator::TYPE_CODE_128)),
+                            'expired_at' => $voucher->expired_at ? $voucher->expired_at->format('d M Y') : '-'
                         ];
                     }
                 }
