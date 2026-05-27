@@ -254,7 +254,7 @@
         <div style="text-align: center; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div style="font-weight: bold; font-size: 23px; margin-bottom: 10px; color: #0f172a;">{{ $voucher['serial_number'] }}</div>
             <img src="data:image/png;base64,{{ $voucher['base64_barcode'] }}" alt="Barcode" style="max-width: 100%; height: 60px;">
-            @if(isset($voucher['expired_at']))
+            @if(isset($voucher['expired_at']) && $voucher['expired_at'] !== '-')
             <div style="font-size: 20px; color: #64748b; margin-top: 10px;">Berlaku s/d: {{ $voucher['expired_at'] }}</div>
             @endif
         </div>

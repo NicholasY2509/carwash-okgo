@@ -86,7 +86,7 @@ class SendWhatsAppReceiptJob implements ShouldQueue
                         $vouchers[] = [
                             'serial_number' => $voucher->serial_number,
                             'base64_barcode' => base64_encode($generator->getBarcode($voucher->serial_number, $generator::TYPE_CODE_128)),
-                            'expired_at' => $voucher->expired_at ? $voucher->expired_at->format('d M Y') : '-'
+                            'expired_at' => $voucher->expired_at ? $voucher->expired_at->format('d M Y') : ($packet->expired_at ? $packet->expired_at->format('d M Y') : '-')
                         ];
                     }
                 }
@@ -100,7 +100,7 @@ class SendWhatsAppReceiptJob implements ShouldQueue
 
             // 2. Compose the warm caption
             $caption = "Halo *{$customerName}*, terima kasih telah mencuci kendaraan Anda di *KURO AUTO CARE*! 🙏\n\n";
-            if($plateNumber) {
+            if($plateNumber && $this->transaction->transaction_type !== 'Paket Voucher') {
                 $caption .= "Berikut dilampirkan struk pembayaran digital resmi Anda untuk kendaraan dengan Plat Nomor *{$plateNumber}*.\n\n";
             }
             $caption .= "Enjoy your clean ride ✨ \n";
