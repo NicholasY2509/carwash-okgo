@@ -595,6 +595,10 @@ export default function PurchasedPacketIndex() {
         {
             id: "actions",
             header: "Aksi",
+            meta: {
+                className:
+                    "sticky right-0 bg-card z-10 text-center shadow-[-4px_0_12px_rgba(0,0,0,0.05)]",
+            },
             cell: ({ row }) => {
                 const transaction = row.original;
 

@@ -109,7 +109,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Vouchers
-    Route::resource('vouchers', VoucherController::class)->middleware('permission:voucher');
     Route::controller(VoucherController::class)->middleware('permission:voucher')->group(function () {
         Route::get('vouchers/serials', 'getAllSerialNumbers')->name('vouchers.serials');
         Route::get('vouchers/search', 'searchJson')->name('vouchers.search');
@@ -118,6 +117,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('vouchers/update-expiration', 'updateExpiration')->name('vouchers.update-expiration');
         Route::get('vouchers/print-barcodes', 'printBarcodes')->name('vouchers.print-barcodes');
     });
+    Route::resource('vouchers', VoucherController::class)->middleware('permission:voucher');
     Route::resource('voucher-types', VoucherTypeController::class)->middleware('permission:voucher type');
     Route::resource('voucher-packets', VoucherPacketController::class)->middleware('permission:voucher packet');
     Route::get('voucher-history', [\App\Http\Controllers\VoucherHistoryController::class, 'index'])->name('voucher-history.index')->middleware('permission:voucher history');
