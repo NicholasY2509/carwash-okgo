@@ -41,7 +41,10 @@ class CarWashController extends Controller
             'items.item',
             'voucher:id,serial_number,sales_transaction_id'
         ])
-            ->whereIn('transaction_type', $carWashTransactionTypes);
+            ->whereIn('transaction_type', $carWashTransactionTypes)
+            ->when($request->filled('staff_id'), function ($q) use ($request) {
+                $q->where('staff_id', $request->staff_id);
+            });
 
         // Add search functionality
         if (!empty($search)) {
@@ -128,8 +131,15 @@ class CarWashController extends Controller
         $paginated = $salesTransactions->toArray();
         $paginated['data'] = $mappedTransactions->values();
 
+        $staffList = \App\Models\Staff::where('work_position_id', 2)->get(['id', 'full_name as name']);
+
         return Inertia::render('car_wash/index', [
-            'service_records' => $paginated
+            'service_records' => $paginated,
+            'staffList' => $staffList,
+            'filters' => [
+                'staff_id' => $request->input('staff_id'),
+                'search' => $search,
+            ]
         ]);
     }
 

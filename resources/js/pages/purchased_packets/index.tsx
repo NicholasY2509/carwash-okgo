@@ -4,6 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppLayout from "@/layouts/app-layout";
 import { BreadcrumbItem, PageProps } from "@/types";
 import { Head, usePage, router } from "@inertiajs/react";
@@ -470,14 +471,18 @@ function VouchersDialog({ transaction }: { transaction: SalesTransactionRow }) {
 
 export default function PurchasedPacketIndex() {
     const { hasPermission } = usePermission();
-    const { props } = usePage<PageProps<{ salesTransactions: any }>>();
+    const { props } = usePage<PageProps<{ salesTransactions: any; staffList: any; filters: any }>>();
     const pagination = props.salesTransactions || {
         data: [],
         per_page: 10,
         current_page: 1,
         last_page: 1,
     };
+    const staffList = props.staffList || [];
+    const filters = props.filters || { staff_id: "", search: "" };
+
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
+    const [staffId, setStaffId] = useState(filters.staff_id ? filters.staff_id.toString() : "all");
 
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -625,7 +630,7 @@ export default function PurchasedPacketIndex() {
     const handlePageChange = (page: number) => {
         router.get(
             route("purchased-packets.index"),
-            { page, per_page: perPage, search: debouncedSearchQuery },
+            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
             { preserveState: true },
         );
     };
@@ -634,7 +639,7 @@ export default function PurchasedPacketIndex() {
         setPerPage(newPerPage);
         router.get(
             route("purchased-packets.index"),
-            { page: 1, per_page: newPerPage, search: debouncedSearchQuery },
+            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
             { preserveState: true },
         );
     };
@@ -643,11 +648,11 @@ export default function PurchasedPacketIndex() {
         if (debouncedSearchQuery !== undefined) {
             router.get(
                 route("purchased-packets.index"),
-                { page: 1, per_page: perPage, search: debouncedSearchQuery },
+                { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
                 { preserveState: true },
             );
         }
-    }, [debouncedSearchQuery, perPage]);
+    }, [debouncedSearchQuery, perPage, staffId]);
 
     const clearSearch = () => setSearchQuery("");
 
@@ -691,6 +696,19 @@ export default function PurchasedPacketIndex() {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Select value={staffId} onValueChange={setStaffId}>
+                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                    <SelectValue placeholder="Semua Kasir" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all" className="text-xs">Semua Kasir</SelectItem>
+                                    {staffList.map((staff: any) => (
+                                        <SelectItem key={staff.id} value={staff.id.toString()} className="text-xs">{staff.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="relative w-full max-w-xs">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,6 +1,7 @@
 import Heading from "@/components/heading";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppLayout from "@/layouts/app-layout";
 import formatRupiah from "@/lib/rupiah-formatter";
 import { BreadcrumbItem, PageProps } from "@/types";
@@ -264,9 +265,13 @@ function CancelConfirmDialog({
 
 export default function CarWashIndex() {
     const { hasPermission } = usePermission();
-    const { props } = usePage<PageProps<{ service_records: any }>>();
+    const { props } = usePage<PageProps<{ service_records: any; staffList: any; filters: any }>>();
     const pagination = props.service_records;
+    const staffList = props.staffList || [];
+    const filters = props.filters || { staff_id: "", search: "" };
+
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
+    const [staffId, setStaffId] = useState(filters.staff_id ? filters.staff_id.toString() : "all");
 
     const [selectedWashDetail, setSelectedWashDetail] =
         useState<ServiceRecords | null>(null);
@@ -405,7 +410,7 @@ export default function CarWashIndex() {
     const handlePageChange = (page: number) => {
         router.get(
             route("car-washes.index"),
-            { page, per_page: perPage, search: debouncedSearchQuery },
+            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
             { preserveState: true },
         );
     };
@@ -414,7 +419,7 @@ export default function CarWashIndex() {
         setPerPage(newPerPage);
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: newPerPage, search: debouncedSearchQuery },
+            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
             { preserveState: true },
         );
     };
@@ -423,10 +428,10 @@ export default function CarWashIndex() {
         if (!isMounted.current) return;
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: perPage, search: debouncedSearchQuery },
+            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
             { preserveState: true },
         );
-    }, [debouncedSearchQuery]);
+    }, [debouncedSearchQuery, staffId]);
 
     const clearSearch = () => {
         setSearchQuery("");
@@ -472,6 +477,19 @@ export default function CarWashIndex() {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Select value={staffId} onValueChange={setStaffId}>
+                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                    <SelectValue placeholder="Semua Kasir" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all" className="text-xs">Semua Kasir</SelectItem>
+                                    {staffList.map((staff: any) => (
+                                        <SelectItem key={staff.id} value={staff.id.toString()} className="text-xs">{staff.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="relative w-full max-w-xs">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

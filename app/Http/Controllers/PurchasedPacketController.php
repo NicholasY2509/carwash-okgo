@@ -34,7 +34,10 @@ class PurchasedPacketController extends Controller
             'purchasedPackets.car:id,plate_number',
             'purchasedPackets.vouchers',
         ])
-        ->where('transaction_type', 'Paket Voucher');
+        ->where('transaction_type', 'Paket Voucher')
+        ->when($request->filled('staff_id'), function ($q) use ($request) {
+            $q->where('staff_id', $request->staff_id);
+        });
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -76,8 +79,15 @@ class PurchasedPacketController extends Controller
             }
         }
 
+        $staffList = \App\Models\Staff::where('work_position_id', 2)->get(['id', 'full_name as name']);
+
         return Inertia::render('purchased_packets/index', [
-            'salesTransactions' => $salesTransactions
+            'salesTransactions' => $salesTransactions,
+            'staffList' => $staffList,
+            'filters' => [
+                'staff_id' => $request->input('staff_id'),
+                'search' => $search,
+            ]
         ]);
     }
 

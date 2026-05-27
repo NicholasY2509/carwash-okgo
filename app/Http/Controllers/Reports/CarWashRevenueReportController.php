@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\SalesTransaction;
+use App\Models\Staff;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class CarWashRevenueReportController extends Controller
         $reportType = $request->input('report_type', 'daily'); // 'daily' or 'monthly'
         $startDate = $request->input('start_date', Carbon::now('Asia/Jakarta')->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
+        $staffId = $request->input('staff_id');
 
         $carWashTypes = ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi'];
 
@@ -24,7 +26,10 @@ class CarWashRevenueReportController extends Controller
             ->whereBetween('transaction_date', [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay(),
-            ]);
+            ])
+            ->when($staffId, function($query) use ($staffId) {
+                $query->where('staff_id', $staffId);
+            });
 
         // Summary statistics
         $summaryQuery = clone $baseQuery;
@@ -46,6 +51,9 @@ class CarWashRevenueReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($staffId, function($query) use ($staffId) {
+                    $query->where('staff_id', $staffId);
+                })
                 ->orderBy('transaction_date', 'desc')
                 ->paginate(20)
                 ->withQueryString()
@@ -76,6 +84,9 @@ class CarWashRevenueReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($staffId, function($query) use ($staffId) {
+                    $query->where('staff_id', $staffId);
+                })
                 ->groupBy(DB::raw("DATE_FORMAT(transaction_date, '%Y-%m')"))
                 ->orderBy('month', 'desc')
                 ->paginate(20)
@@ -93,6 +104,8 @@ class CarWashRevenueReportController extends Controller
                 });
         }
 
+        $staffList = Staff::where('work_position_id', 2)->get(['id', 'full_name as name']);
+
         return Inertia::render('reports/car_wash_revenue', [
             'reportData' => $data,
             'summary' => $summary,
@@ -100,7 +113,9 @@ class CarWashRevenueReportController extends Controller
                 'report_type' => $reportType,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'staff_id' => $staffId,
             ],
+            'staffList' => $staffList,
         ]);
     }
 }
