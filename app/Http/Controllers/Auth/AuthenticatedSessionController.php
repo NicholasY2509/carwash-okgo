@@ -33,6 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (Auth::user()->hasRole('Kasir')) {
+            return redirect()->intended(route('car-washes.create', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

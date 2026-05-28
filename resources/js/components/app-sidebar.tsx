@@ -39,6 +39,7 @@ const allNavItems = {
         {
             title: "Dashboard",
             url: "/dashboard",
+            permission: "dashboard",
             icon: Home,
         },
         {

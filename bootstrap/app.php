@@ -32,6 +32,13 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
             OptimizeInertiaResponse::class,
         ]);
+
+        $middleware->redirectUsersTo(function (\Illuminate\Http\Request $request) {
+            if (auth()->check() && auth()->user()->hasRole('Kasir')) {
+                return route('car-washes.create');
+            }
+            return route('dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
