@@ -301,29 +301,30 @@ export default function Dashboard({}) {
 
                 {/* <ReminderAlert reminders={reminders} /> */}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs ">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs ">
-                        <TotalRevenueCard
-                            className="col-span-1 lg:col-span-2"
-                            revenue={revenue}
-                            cashCarWashRevenue={cashCarWashRevenue}
-                            otherCarWashRevenue={otherCarWashRevenue}
-                        />
-                        <PaymentTypeStats
-                            title="Cuci Mobil Hari Ini"
-                            stats={props.todayCarWashByPayment}
-                        />
-                        <VoucherPacketSalesCard
-                            voucherPacketSales={voucherPacketSales}
-                            voucherPurchaseRevenue={voucherPurchaseRevenue}
-                        />
-                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
+                    <TotalRevenueCard
+                        className="col-span-1 lg:col-span-2 xl:col-span-3"
+                        revenue={revenue}
+                        cashCarWashRevenue={cashCarWashRevenue}
+                        otherCarWashRevenue={otherCarWashRevenue}
+                    />
+                    <PaymentTypeStats
+                        title="Cuci Mobil Hari Ini"
+                        stats={props.todayCarWashByPayment}
+                        className="col-span-1 xl:col-span-1"
+                    />
+                    <VoucherPacketSalesCard
+                        voucherPacketSales={voucherPacketSales}
+                        voucherPurchaseRevenue={voucherPurchaseRevenue}
+                        className="col-span-1 xl:col-span-1"
+                    />
                     <LatestTransactionsCard
                         latestTransactions={latestTransactions}
+                        className="col-span-1 lg:col-span-2 xl:col-span-1"
                     />
                     <RevenueTrendChart
                         data={revenueTrend}
-                        className="col-span-1 lg:col-span-2"
+                        className="col-span-1 lg:col-span-2 xl:col-span-3"
                     />
                 </div>
             </div>

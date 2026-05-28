@@ -4,14 +4,16 @@ import formatRupiah from "@/lib/rupiah-formatter";
 interface VoucherPacketSalesCardProps {
     voucherPacketSales: { name: string; count: number }[];
     voucherPurchaseRevenue: number;
+    className?: string;
 }
 
 export default function VoucherPacketSalesCard({
     voucherPacketSales,
     voucherPurchaseRevenue,
+    className,
 }: VoucherPacketSalesCardProps) {
     return (
-        <Card className="">
+        <Card className={className}>
             <CardHeader>
                 <CardTitle className="text-sm font-medium">
                     Pembelian Voucher Hari ini
@@ -41,7 +43,11 @@ export default function VoucherPacketSalesCard({
                 </div>
                 <div className="flex items-center justify-end mt-4">
                     <span className="text-lg font-bold text-primary">
-                        Total: {voucherPacketSales.reduce((acc, pkt) => acc + pkt.count, 0)}
+                        Total:{" "}
+                        {voucherPacketSales.reduce(
+                            (acc, pkt) => acc + pkt.count,
+                            0,
+                        )}
                     </span>
                 </div>
             </CardContent>

@@ -9,13 +9,16 @@ import {
     TableCell,
 } from "@/components/ui/table";
 import { Modal, ModalHeader } from "@/components/ui/modal";
+import { cn } from "@/lib/utils";
 
 interface LatestTransactionsCardProps {
     latestTransactions: any[];
+    className?: string;
 }
 
 export default function LatestTransactionsCard({
     latestTransactions,
+    className,
 }: LatestTransactionsCardProps) {
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
@@ -34,7 +37,7 @@ export default function LatestTransactionsCard({
     }
 
     return (
-        <Card className="flex flex-col h-full">
+        <Card className={cn("flex flex-col h-full", className)}>
             <CardHeader>
                 <CardTitle className="text-sm font-medium">
                     5 Cuci Mobil Terakhir

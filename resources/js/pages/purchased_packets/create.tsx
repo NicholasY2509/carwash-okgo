@@ -129,6 +129,7 @@ export default function CreatePurchasedPacket() {
             setFooterError(null);
             setSelectedVoucherIds([]);
             setIsFormSubmitting(false);
+            setQuantity(1);
         }
     };
 
