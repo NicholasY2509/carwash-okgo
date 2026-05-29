@@ -48,10 +48,7 @@ interface SalesTransaction {
 interface Car {
     id: string;
     plate_number: string;
-    car_type: {
-        id: number;
-        name: string;
-    };
+    car_type: string | null;
 }
 
 interface CustomerProps {
@@ -255,7 +252,7 @@ export default function CarShow() {
                                                         {car.plate_number}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {car.car_type?.name}
+                                                        {car.car_type}
                                                     </TableCell>
                                                 </TableRow>
                                             ))

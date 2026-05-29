@@ -34,7 +34,7 @@ import { currencyFormatter } from "@/lib/currency-formatter";
 interface car {
     id: string;
     plate_number: string;
-    car_type_id?: string | number | null;
+    car_type?: string | null;
     model: string;
     color: string;
     photo: string;
@@ -65,7 +65,7 @@ interface ItemProp {
 }
 interface CreateCashPurchaseProps {
     onSuccess: () => void;
-    carTypes: { id: number; name: string }[];
+
     items: ItemProp[];
     selectedProduct: { id: number; name: string; items?: ItemProp[] } | null;
     selectedItems: number[];
@@ -144,7 +144,7 @@ const CreateCashPurchase = forwardRef<
     (
         {
             onSuccess,
-            carTypes,
+
             items,
             selectedProduct,
             selectedItems,
@@ -160,7 +160,7 @@ const CreateCashPurchase = forwardRef<
             customer_email: string;
             customer_ktp_photo: File | null;
             car_plate_number: string;
-            car_type_id: string | null;
+            car_type: string;
             car_model: string;
             car_color: string;
             car_photo: File | null;
@@ -178,7 +178,7 @@ const CreateCashPurchase = forwardRef<
                 customer_email: "",
                 customer_ktp_photo: null,
                 car_plate_number: "",
-                car_type_id: null,
+                car_type: "",
                 car_model: "",
                 car_color: "",
                 car_photo: null,
@@ -220,16 +220,14 @@ const CreateCashPurchase = forwardRef<
         const summaryData = useMemo(() => {
             if (!selectedCustomer && !data.customer_name) return null;
 
-            const selectedCarTypeName = carTypes.find(
-                (t) => String(t.id) === data.car_type_id,
-            )?.name;
+
 
             return {
                 customer: selectedCustomer
                     ? `${selectedCustomer.name} (${selectedCustomer.phone})`
                     : `${data.customer_name}${data.customer_phone ? ` (${data.customer_phone})` : ""}`,
                 car: data.car_plate_number
-                    ? `${data.car_plate_number}${selectedCarTypeName ? ` - ${selectedCarTypeName}` : ""}`
+                    ? `${data.car_plate_number}${data.car_type ? ` - ${data.car_type}` : ""}`
                     : null,
             };
         }, [
@@ -237,8 +235,7 @@ const CreateCashPurchase = forwardRef<
             data.customer_name,
             data.customer_phone,
             data.car_plate_number,
-            data.car_type_id,
-            carTypes,
+            data.car_type,
         ]);
 
         // Optimized form update function
@@ -284,7 +281,7 @@ const CreateCashPurchase = forwardRef<
                     customer_ktp_photo: null,
                     car_id: null,
                     car_plate_number: "",
-                    car_type_id: null,
+                    car_type: "",
                     car_model: "",
                     car_color: "",
                     car_photo: null,
@@ -301,7 +298,7 @@ const CreateCashPurchase = forwardRef<
                     updateFormData({
                         car_id: null,
                         car_plate_number: "",
-                        car_type_id: null,
+                        car_type: "",
                         car_model: "",
                         car_color: "",
                         car_photo: null,
@@ -317,9 +314,7 @@ const CreateCashPurchase = forwardRef<
                     updateFormData({
                         car_id: selectedCar.id,
                         car_plate_number: selectedCar.plate_number,
-                        car_type_id: selectedCar.car_type_id
-                            ? String(selectedCar.car_type_id)
-                            : null,
+                        car_type: selectedCar.car_type || "",
                         car_model: selectedCar.model,
                         car_color: selectedCar.color,
                         car_photo: null,
@@ -336,7 +331,7 @@ const CreateCashPurchase = forwardRef<
                 carPlateSearch.updateQuery(upperValue);
                 setData("car_plate_number", upperValue);
                 setData("car_id", null);
-                setData("car_type_id", null);
+                setData("car_type", "");
                 setData("car_model", "");
                 setData("car_color", "");
                 setData("car_photo", null);
@@ -356,9 +351,7 @@ const CreateCashPurchase = forwardRef<
                 updateFormData({
                     car_id: result.car.id,
                     car_plate_number: result.car.plate_number,
-                    car_type_id: result.car.car_type_id
-                        ? String(result.car.car_type_id)
-                        : null,
+                    car_type: result.car.car_type || "",
                     car_model: result.car.model,
                     car_color: result.car.color,
                     car_photo: null,
@@ -380,13 +373,13 @@ const CreateCashPurchase = forwardRef<
                 newErrors.car_plate_number =
                     "Nomor polisi harus diisi atau pilih mobil terdaftar.";
             }
-            if (!data.car_id && !data.car_type_id) {
-                newErrors.car_type_id = "Tipe mobil wajib dipilih.";
+            if (!data.car_id && !data.car_type) {
+                newErrors.car_type = "Tipe mobil wajib diisi.";
             }
 
             setLocalErrors(newErrors);
             return Object.keys(newErrors).length === 0;
-        }, [data.car_id, data.car_plate_number, data.car_type_id]);
+        }, [data.car_id, data.car_plate_number, data.car_type]);
 
         const handleSubmit = useCallback(
             (footerData: FooterData) => {
@@ -611,41 +604,27 @@ const CreateCashPurchase = forwardRef<
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="car_type_id" required>
+                                        <Label htmlFor="car_type" required>
                                             Tipe Mobil
                                         </Label>
-                                        <Select
-                                            onValueChange={(value) => {
-                                                if (data.car_id)
-                                                    setData("car_id", null);
-                                                setData("car_type_id", value);
+                                        <Input
+                                            id="car_type"
+                                            value={data.car_type}
+                                            onChange={(e) => {
+                                                if (data.car_id) setData("car_id", null);
+                                                setData("car_type", e.target.value);
                                             }}
-                                            value={data.car_type_id || ""}
                                             disabled={
                                                 !!carPlateSearch.query &&
                                                 !!selectedCustomer &&
                                                 !isNewCar
                                             }
-                                        >
-                                            <SelectTrigger id="car_type_id">
-                                                <SelectValue placeholder="Pilih tipe mobil..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {carTypes.map((type) => (
-                                                    <SelectItem
-                                                        key={type.id}
-                                                        value={String(type.id)}
-                                                    >
-                                                        {type.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {(errors.car_type_id ||
-                                            localErrors.car_type_id) && (
+                                        />
+                                        {(errors.car_type ||
+                                            localErrors.car_type) && (
                                             <p className="text-sm text-red-600 mt-1">
-                                                {errors.car_type_id ||
-                                                    localErrors.car_type_id}
+                                                {errors.car_type ||
+                                                    localErrors.car_type}
                                             </p>
                                         )}
                                     </div>

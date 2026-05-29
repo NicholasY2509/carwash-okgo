@@ -27,6 +27,7 @@ interface VoucherPacketProp {
     has_unlimited_issuance: boolean;
     assign_on_sale: boolean;
     until_year_end: boolean;
+    autogenerate_vouchers: boolean;
     voucher_type: {
         id: number;
         name: string;

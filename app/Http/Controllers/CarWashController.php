@@ -162,10 +162,6 @@ class CarWashController extends Controller
             ->limit(20) // Limit to 20 stalls max
             ->get();
 
-        $carTypes = \App\Models\CarType::select(['id', 'name'])
-            ->orderBy('name')
-            ->get();
-
         $staffs = \App\Models\Staff::select(['id', 'full_name'])
             ->orderBy('full_name')
             ->where('work_position_id', 4)
@@ -178,7 +174,6 @@ class CarWashController extends Controller
         return Inertia::render('car_wash/create', [
             'products' => $products,
             'stalls' => $stalls,
-            'car_types' => $carTypes,
             'staffs' => $staffs,
             'items' => $items,
         ]);
@@ -217,7 +212,7 @@ class CarWashController extends Controller
                 }
                 $car = $customer->cars()->create([
                     'plate_number' => $request->car_plate_number,
-                    'car_type_id' => $request->car_type_id,
+                    'car_type' => $request->car_type,
                     'model' => $request->car_model,
                     'color' => $request->car_color,
                     'photo' => $carPhotoPath,
@@ -365,7 +360,7 @@ class CarWashController extends Controller
                 }
                 $car = $customer->cars()->create([
                     'plate_number' => $request->plate_number,
-                    'car_type_id' => $request->car_type_id,
+                    'car_type' => $request->car_type,
                     'model' => $request->car_model,
                     'color' => $request->car_color,
                     'photo' => $carPhotoPath,

@@ -14,9 +14,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 
 interface Car {
     plate_number: string;
-    car_type?: {
-        name: string;
-    } | null;
+    car_type?: string | null;
 }
 
 interface ServiceRecord {
@@ -126,7 +124,7 @@ export default function QueueIndex({ serviceRecords = [], filters }: Props) {
                     {record.car?.plate_number || "N/A"}
                 </CardTitle>
                 <div className="text-xs text-muted-foreground capitalize">
-                    {record.car?.car_type?.name || "Unknown Model"}
+                    {record.car?.car_type || "Unknown Model"}
                 </div>
             </CardHeader>
             <CardContent className="">

@@ -10,7 +10,7 @@ class CarController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Car::with(['customer', 'carType']);
+        $query = Car::with(['customer']);
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -30,7 +30,7 @@ class CarController extends Controller
 
     public function show(Request $request, string $id)
     {
-        $car = Car::with(['customer', 'carType'])->findOrFail($id);
+        $car = Car::with(['customer'])->findOrFail($id);
         
         $salesTransactionsQuery = $car->salesTransactions()->with('staff')->latest();
         
@@ -43,12 +43,9 @@ class CarController extends Controller
         
         $salesTransactions = $salesTransactionsQuery->paginate($request->per_page ?? 10)->withQueryString();
 
-        $carTypes = \App\Models\CarType::all();
-
         return Inertia::render('cars/show', [
             'car' => $car,
             'salesTransactions' => $salesTransactions,
-            'carTypes' => $carTypes,
             'filters' => $request->only(['start_date', 'end_date'])
         ]);
     }
@@ -59,7 +56,7 @@ class CarController extends Controller
         if (!$plate) {
             return response()->json([]);
         }
-        $cars = Car::with('customer', 'carType')
+        $cars = Car::with('customer')
             ->where('plate_number', 'LIKE', '%' . strtoupper($plate) . '%')
             ->limit(10)
             ->get();
@@ -72,10 +69,7 @@ class CarController extends Controller
                     'model' => $car->model,
                     'color' => $car->color,
                     'photo' => $car->photo,
-                    'car_type' => $car->carType ? [
-                        'id' => $car->carType->id,
-                        'name' => $car->carType->name,
-                    ] : null,
+                    'car_type' => $car->car_type,
                 ],
                 'customer' => $car->customer ? [
                     'id' => $car->customer->id,
@@ -127,7 +121,7 @@ class CarController extends Controller
             'plate_number' => ['required', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'color' => ['nullable', 'string', 'max:255'],
-            'car_type_id' => ['nullable', 'exists:car_types,id'],
+            'car_type' => ['nullable', 'string', 'max:255'],
         ]);
 
         $car->update($validated);

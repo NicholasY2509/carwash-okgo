@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 
 interface ReportRow {
     id?: string;
@@ -43,8 +45,10 @@ interface ReportRow {
     total_revenue?: number;
     cash_revenue?: number;
     voucher_revenue?: number;
+    voucher_count?: number;
     transfer_revenue?: number;
     warranty_count?: number;
+    payment_breakdown?: Record<string, number>;
 }
 
 interface Summary {
@@ -53,8 +57,10 @@ interface Summary {
     avg_transaction: number;
     cash_revenue: number;
     voucher_revenue: number;
+    voucher_count: number;
     transfer_revenue: number;
     warranty_count: number;
+    payment_breakdown: Record<string, number>;
 }
 
 interface Staff {
@@ -188,156 +194,156 @@ export default function CarWashRevenueReport() {
     const columns: ColumnDef<ReportRow>[] =
         filters.report_type === "daily"
             ? [
-                  {
-                      id: "index",
-                      header: "No",
-                      cell: (row) =>
-                          row.row.index +
-                          1 +
-                          (pagination.current_page - 1) * pagination.per_page,
-                  },
-                  {
-                      accessorKey: "transaction_date",
-                      header: "Waktu",
-                      cell: ({ row }) => (
-                          <span className="font-medium text-xs">
-                              {formatDateTime(row.original.transaction_date)}
-                          </span>
-                      ),
-                  },
-                  {
-                      id: "customer_info",
-                      header: "Customer & Kendaraan",
-                      cell: ({ row }) => (
-                          <div>
-                              <div className="font-semibold text-foreground text-xs">
-                                  {row.original.customer_name}
-                              </div>
-                              {row.original.plate_number && (
-                                  <div className="text-[10px] text-muted-foreground">
-                                      {row.original.plate_number}
-                                  </div>
-                              )}
-                          </div>
-                      ),
-                  },
-                  {
-                      accessorKey: "transaction_type",
-                      header: "Tipe Transaksi",
-                      cell: ({ row }) => {
-                          const type = row.original.transaction_type;
-                          const getVariant = () => {
-                              if (type === "Cuci Mobil") return "secondary";
-                              if (type === "Cuci Mobil Voucher")
-                                  return "outline";
-                              if (type === "Klaim Garansi")
-                                  return "destructive";
-                              return "secondary";
-                          };
-                          return (
-                              <Badge
-                                  variant={getVariant()}
-                                  className="text-[10px] py-0.5 px-1.5"
-                              >
-                                  {type}
-                              </Badge>
-                          );
-                      },
-                  },
-                  {
-                      accessorKey: "payment_method",
-                      header: "Metode",
-                      cell: ({ row }) => (
-                          <span className="text-xs font-semibold">
-                              {row.original.payment_method}
-                          </span>
-                      ),
-                  },
-                  {
-                      accessorKey: "total_amount",
-                      header: "Total Omset",
-                      cell: ({ row }) => (
-                          <span className="font-extrabold text-blue-600 dark:text-blue-400 text-xs">
-                              {formatRupiah(row.original.total_amount || 0)}
-                          </span>
-                      ),
-                  },
-              ]
+                {
+                    id: "index",
+                    header: "No",
+                    cell: (row) =>
+                        row.row.index +
+                        1 +
+                        (pagination.current_page - 1) * pagination.per_page,
+                },
+                {
+                    accessorKey: "transaction_date",
+                    header: "Waktu",
+                    cell: ({ row }) => (
+                        <span className="font-medium text-xs">
+                            {formatDateTime(row.original.transaction_date)}
+                        </span>
+                    ),
+                },
+                {
+                    id: "customer_info",
+                    header: "Customer & Kendaraan",
+                    cell: ({ row }) => (
+                        <div>
+                            <div className="font-semibold text-foreground text-xs">
+                                {row.original.customer_name}
+                            </div>
+                            {row.original.plate_number && (
+                                <div className="text-[10px] text-muted-foreground">
+                                    {row.original.plate_number}
+                                </div>
+                            )}
+                        </div>
+                    ),
+                },
+                {
+                    accessorKey: "transaction_type",
+                    header: "Tipe Transaksi",
+                    cell: ({ row }) => {
+                        const type = row.original.transaction_type;
+                        const getVariant = () => {
+                            if (type === "Cuci Mobil") return "secondary";
+                            if (type === "Cuci Mobil Voucher")
+                                return "outline";
+                            if (type === "Klaim Garansi")
+                                return "destructive";
+                            return "secondary";
+                        };
+                        return (
+                            <Badge
+                                variant={getVariant()}
+                                className="text-[10px] py-0.5 px-1.5"
+                            >
+                                {type}
+                            </Badge>
+                        );
+                    },
+                },
+                {
+                    accessorKey: "payment_method",
+                    header: "Metode",
+                    cell: ({ row }) => (
+                        <span className="text-xs font-semibold">
+                            {row.original.payment_method}
+                        </span>
+                    ),
+                },
+                {
+                    accessorKey: "total_amount",
+                    header: "Total Omset",
+                    cell: ({ row }) => (
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400 text-xs">
+                            {formatRupiah(row.original.total_amount || 0)}
+                        </span>
+                    ),
+                },
+            ]
             : [
-                  {
-                      id: "index",
-                      header: "No",
-                      cell: (row) =>
-                          row.row.index +
-                          1 +
-                          (pagination.current_page - 1) * pagination.per_page,
-                  },
-                  {
-                      id: "period",
-                      header: "Bulan",
-                      cell: ({ row }) => (
-                          <div className="font-medium">
-                              {row.original.month
-                                  ? formatMonth(row.original.month)
-                                  : ""}
-                          </div>
-                      ),
-                  },
-                  {
-                      accessorKey: "total_transactions",
-                      header: "Transaksi",
-                      cell: ({ row }) => (
-                          <div className="font-semibold text-center">
-                              {row.original.total_transactions}
-                          </div>
-                      ),
-                  },
-                  {
-                      accessorKey: "cash_revenue",
-                      header: "Cash",
-                      cell: ({ row }) => (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                              {formatRupiah(row.original.cash_revenue || 0)}
-                          </span>
-                      ),
-                  },
-                  {
-                      accessorKey: "voucher_revenue",
-                      header: "Voucher",
-                      cell: ({ row }) => (
-                          <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                              {formatRupiah(row.original.voucher_revenue || 0)}
-                          </span>
-                      ),
-                  },
-                  {
-                      accessorKey: "transfer_revenue",
-                      header: "Transfer",
-                      cell: ({ row }) => (
-                          <span className="text-amber-600 dark:text-amber-400 font-medium">
-                              {formatRupiah(row.original.transfer_revenue || 0)}
-                          </span>
-                      ),
-                  },
-                  {
-                      accessorKey: "warranty_count",
-                      header: "Garansi",
-                      cell: ({ row }) => (
-                          <div className="text-center text-xs font-semibold text-muted-foreground">
-                              {row.original.warranty_count}
-                          </div>
-                      ),
-                  },
-                  {
-                      accessorKey: "total_revenue",
-                      header: "Total Omset",
-                      cell: ({ row }) => (
-                          <span className="font-extrabold text-blue-600 dark:text-blue-400">
-                              {formatRupiah(row.original.total_revenue || 0)}
-                          </span>
-                      ),
-                  },
-              ];
+                {
+                    id: "index",
+                    header: "No",
+                    cell: (row) =>
+                        row.row.index +
+                        1 +
+                        (pagination.current_page - 1) * pagination.per_page,
+                },
+                {
+                    id: "period",
+                    header: "Bulan",
+                    cell: ({ row }) => (
+                        <div className="font-medium">
+                            {row.original.month
+                                ? formatMonth(row.original.month)
+                                : ""}
+                        </div>
+                    ),
+                },
+                {
+                    accessorKey: "total_transactions",
+                    header: "Transaksi",
+                    cell: ({ row }) => (
+                        <div className="font-semibold text-center">
+                            {row.original.total_transactions}
+                        </div>
+                    ),
+                },
+                {
+                    accessorKey: "cash_revenue",
+                    header: "Cash",
+                    cell: ({ row }) => (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            {formatRupiah(row.original.cash_revenue || 0)}
+                        </span>
+                    ),
+                },
+                {
+                    accessorKey: "voucher_revenue",
+                    header: "Voucher",
+                    cell: ({ row }) => (
+                        <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                            {formatRupiah(row.original.voucher_revenue || 0)}
+                        </span>
+                    ),
+                },
+                {
+                    accessorKey: "transfer_revenue",
+                    header: "Transfer",
+                    cell: ({ row }) => (
+                        <span className="text-amber-600 dark:text-amber-400 font-medium">
+                            {formatRupiah(row.original.transfer_revenue || 0)}
+                        </span>
+                    ),
+                },
+                {
+                    accessorKey: "warranty_count",
+                    header: "Garansi",
+                    cell: ({ row }) => (
+                        <div className="text-center text-xs font-semibold text-muted-foreground">
+                            {row.original.warranty_count}
+                        </div>
+                    ),
+                },
+                {
+                    accessorKey: "total_revenue",
+                    header: "Total Omset",
+                    cell: ({ row }) => (
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400">
+                            {formatRupiah(row.original.total_revenue || 0)}
+                        </span>
+                    ),
+                },
+            ];
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -466,7 +472,7 @@ export default function CarWashRevenueReport() {
 
                 {/* Summary Cards */}
                 <motion.div
-                    className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                    className="grid gap-4 md:grid-cols-2 lg:grid-cols-2"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
@@ -483,27 +489,33 @@ export default function CarWashRevenueReport() {
                                 <div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
                                     {formatRupiah(summary.total_revenue || 0)}
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {summary.total_transactions || 0} transaksi
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                    <motion.div variants={cardVariants}>
-                        <Card className="shadow-sm border bg-gradient-to-tr from-emerald-500/10 via-card to-card hover:shadow-md transition-shadow">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-semibold">
-                                    Pembayaran Cash
-                                </CardTitle>
-                                <Banknote className="h-5 w-5 text-emerald-600" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                                    {formatRupiah(summary.cash_revenue || 0)}
+                                <div className="flex items-end justify-between mt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                        {summary.total_transactions || 0} transaksi
+                                    </p>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="link" size="sm" className="h-auto p-0 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                                Lihat Rincian
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-56 p-3">
+                                            <div className="space-y-2">
+                                                <h4 className="font-medium text-sm border-b pb-1">Detail Pembayaran</h4>
+                                                {summary.payment_breakdown && Object.entries(summary.payment_breakdown).length > 0 ? (
+                                                    Object.entries(summary.payment_breakdown).map(([method, amount]) => (
+                                                        <div key={method} className="flex justify-between text-xs">
+                                                            <span>{method}</span>
+                                                            <span className="font-medium">{formatRupiah(amount as number)}</span>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="text-xs text-muted-foreground">Tidak ada data</div>
+                                                )}
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Pendapatan tunai
-                                </p>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -517,7 +529,7 @@ export default function CarWashRevenueReport() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                                    {formatRupiah(summary.voucher_revenue || 0)}
+                                    {summary.voucher_count || 0} Transaksi
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     Penukaran voucher

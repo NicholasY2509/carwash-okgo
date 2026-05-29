@@ -9,11 +9,20 @@ import { CustomerSearch } from "@/pages/purchased_packets/forms/customer-search"
 import { useTransactionHandler } from "@/hooks/use-transaction-handler";
 import { LoaderCircle } from "lucide-react";
 
+interface car {
+    id: string;
+    plate_number: string;
+    model: string;
+    color: string;
+    photo: string;
+}
+
 interface Customer {
     id: string;
     name: string;
     phone: string;
     email: string;
+    cars: car[];
 }
 
 // Interface untuk data yang dikirim dari footer

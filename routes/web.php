@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\CarController;
-use App\Http\Controllers\CarTypeController;
+
 use App\Http\Controllers\CarWashController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -75,7 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('cars', CarController::class)->middleware('permission:car');
     Route::post('cars/verify-edit-password', [CarController::class, 'verifyEditPassword'])->name('cars.verify-edit-password')->middleware('permission:car');
-    Route::resource('car-types', CarTypeController::class)->middleware('permission:car type');
+
 
     // Stalls (commented out in sidebar, keeping without permissions or with tentative ones)
     Route::resource('stalls', StallController::class);

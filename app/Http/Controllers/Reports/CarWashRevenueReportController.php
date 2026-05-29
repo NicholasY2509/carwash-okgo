@@ -34,13 +34,19 @@ class CarWashRevenueReportController extends Controller
         // Summary statistics
         $summaryQuery = clone $baseQuery;
         $summary = [
-            'total_revenue' => (clone $summaryQuery)->sum('total_amount'),
+            'total_revenue' => (clone $summaryQuery)->whereNotIn('payment_method', ['Voucher', 'Garansi'])->sum('total_amount'),
             'total_transactions' => (clone $summaryQuery)->count(),
-            'avg_transaction' => (clone $summaryQuery)->avg('total_amount') ?? 0,
+            'avg_transaction' => (clone $summaryQuery)->whereNotIn('payment_method', ['Voucher', 'Garansi'])->avg('total_amount') ?? 0,
             'cash_revenue' => (clone $summaryQuery)->where('payment_method', 'Cash')->sum('total_amount'),
             'voucher_revenue' => (clone $summaryQuery)->where('payment_method', 'Voucher')->sum('total_amount'),
+            'voucher_count' => (clone $summaryQuery)->where('payment_method', 'Voucher')->count(),
             'transfer_revenue' => (clone $summaryQuery)->whereNotIn('payment_method', ['Cash', 'Voucher', 'Garansi', 'Special Program'])->sum('total_amount'),
             'warranty_count' => (clone $summaryQuery)->where('transaction_type', 'Klaim Garansi')->count(),
+            'payment_breakdown' => (clone $summaryQuery)
+                ->whereNotIn('payment_method', ['Voucher', 'Garansi'])
+                ->select('payment_method', DB::raw('SUM(total_amount) as total'))
+                ->groupBy('payment_method')
+                ->pluck('total', 'payment_method'),
         ];
 
         if ($reportType === 'daily') {
@@ -75,6 +81,7 @@ class CarWashRevenueReportController extends Controller
                     DB::raw('SUM(total_amount) as total_revenue'),
                     DB::raw("SUM(CASE WHEN payment_method = 'Cash' THEN total_amount ELSE 0 END) as cash_revenue"),
                     DB::raw("SUM(CASE WHEN payment_method = 'Voucher' THEN total_amount ELSE 0 END) as voucher_revenue"),
+                    DB::raw("SUM(CASE WHEN payment_method = 'Voucher' THEN 1 ELSE 0 END) as voucher_count"),
                     DB::raw("SUM(CASE WHEN payment_method NOT IN ('Cash', 'Voucher', 'Garansi', 'Special Program') THEN total_amount ELSE 0 END) as transfer_revenue"),
                     DB::raw("SUM(CASE WHEN transaction_type = 'Klaim Garansi' THEN 1 ELSE 0 END) as warranty_count"),
                 )
@@ -98,6 +105,7 @@ class CarWashRevenueReportController extends Controller
                         'total_revenue' => (float) $row->total_revenue,
                         'cash_revenue' => (float) $row->cash_revenue,
                         'voucher_revenue' => (float) $row->voucher_revenue,
+                        'voucher_count' => (int) $row->voucher_count,
                         'transfer_revenue' => (float) $row->transfer_revenue,
                         'warranty_count' => (int) $row->warranty_count,
                     ];

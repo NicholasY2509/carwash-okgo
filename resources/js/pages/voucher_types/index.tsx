@@ -14,6 +14,7 @@ interface VoucherTypeProps {
     id: number;
     name: string;
     is_free: boolean;
+    voucher_suffix: string;
     only_one_car: boolean;
     description: string;
 }

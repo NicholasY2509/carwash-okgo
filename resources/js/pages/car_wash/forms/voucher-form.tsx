@@ -48,7 +48,7 @@ export interface CreateVoucherPurchaseHandle {
 interface Car {
     id: string;
     plate_number: string;
-    car_type_id?: string | number | null;
+    car_type?: string | null;
     model: string;
     color: string;
     photo: string;
@@ -96,7 +96,7 @@ interface ItemProp {
 
 interface CreateVoucherPurchaseProps {
     onSuccess: () => void;
-    carTypes: { id: number; name: string }[];
+
     items: ItemProp[];
     selectedProduct: { id: number; name: string; items?: ItemProp[] } | null;
     selectedItems: number[];
@@ -177,7 +177,7 @@ const CreateVoucherPurchase = forwardRef<
     (
         {
             onSuccess,
-            carTypes,
+
             items,
             selectedProduct,
             selectedItems,
@@ -193,7 +193,7 @@ const CreateVoucherPurchase = forwardRef<
             customer_name: "",
             customer_phone: "",
             car_id: "",
-            car_type_id: "" as string | null,
+            car_type: "",
             purchased_packet_id: "",
             selected_items: [] as number[],
         });
@@ -291,10 +291,7 @@ const CreateVoucherPurchase = forwardRef<
                     foundVoucher.status === "Sold");
 
             if (activeTab === "customer") {
-                return (
-                    hasValidVoucher &&
-                    (data.car_id || (data.plate_number && data.car_type_id))
-                );
+                    (data.car_id || (data.plate_number && data.car_type))
             } else {
                 return (
                     hasValidVoucher &&
@@ -306,8 +303,7 @@ const CreateVoucherPurchase = forwardRef<
             foundVoucher,
             data.car_id,
             data.plate_number,
-            data.car_type_id,
-            data.customer_name,
+            data.car_type,
             activeTab,
         ]);
 
@@ -324,7 +320,7 @@ const CreateVoucherPurchase = forwardRef<
                 carPlateSearch.updateQuery(upperValue);
                 setData("plate_number", upperValue);
                 setData("car_id", "");
-                setData("car_type_id", "");
+                setData("car_type", "");
                 // Only clear customer if we are in manual tab and it was auto-filled by car
                 if (activeTab === "manual") {
                     if (selectedCar) {
@@ -349,9 +345,7 @@ const CreateVoucherPurchase = forwardRef<
                 updateFormData({
                     car_id: result.car.id,
                     plate_number: result.car.plate_number,
-                    car_type_id: result.car.car_type_id
-                        ? String(result.car.car_type_id)
-                        : "",
+                    car_type: result.car.car_type || "",
                     customer_name: result.customer?.name || data.customer_name,
                     customer_phone:
                         result.customer?.phone || data.customer_phone,
@@ -368,7 +362,7 @@ const CreateVoucherPurchase = forwardRef<
             updateFormData({
                 car_id: "",
                 plate_number: "",
-                car_type_id: "",
+                car_type: "",
                 customer_name: activeTab === "manual" ? "" : data.customer_name,
                 customer_phone:
                     activeTab === "manual" ? "" : data.customer_phone,
@@ -387,9 +381,9 @@ const CreateVoucherPurchase = forwardRef<
                     newErrors.plate_number =
                         "Nomor polisi wajib diisi atau pilih mobil terdaftar.";
                 }
-                if (!data.car_id && !data.car_type_id) {
-                    newErrors.car_type_id =
-                        "Tipe mobil wajib dipilih untuk mobil baru.";
+                if (!data.car_id && !data.car_type) {
+                    newErrors.car_type =
+                        "Tipe mobil wajib diisi untuk mobil baru.";
                 }
             } else {
                 if (!data.serial_number) {
@@ -399,8 +393,8 @@ const CreateVoucherPurchase = forwardRef<
                     newErrors.plate_number =
                         "Nomor polisi harus diisi atau pilih mobil terdaftar.";
                 }
-                if (!data.car_id && !data.car_type_id) {
-                    newErrors.car_type_id = "Tipe mobil wajib dipilih.";
+                if (!data.car_id && !data.car_type) {
+                    newErrors.car_type = "Tipe mobil wajib diisi.";
                 }
                 if (!data.customer_name) {
                     newErrors.customer_name = "Nama pelanggan wajib diisi.";
@@ -669,7 +663,7 @@ const CreateVoucherPurchase = forwardRef<
                                                     updateFormData({
                                                         car_id: "",
                                                         plate_number: "",
-                                                        car_type_id: "",
+                                                        car_type: "",
                                                     });
                                                 } else {
                                                     const selected =
@@ -681,12 +675,8 @@ const CreateVoucherPurchase = forwardRef<
                                                             car_id: selected.id,
                                                             plate_number:
                                                                 selected.plate_number,
-                                                            car_type_id:
-                                                                selected.car_type_id
-                                                                    ? String(
-                                                                          selected.car_type_id,
-                                                                      )
-                                                                    : "",
+                                                            car_type:
+                                                                selected.car_type || "",
                                                         });
                                                     }
                                                 }
@@ -747,47 +737,28 @@ const CreateVoucherPurchase = forwardRef<
                                             </div>
                                             <div className="space-y-2">
                                                 <Label
-                                                    htmlFor="new_car_type_id"
+                                                    htmlFor="new_car_type"
                                                     required
                                                 >
                                                     Tipe Mobil
                                                 </Label>
-                                                <Select
+                                                <Input
+                                                    id="new_car_type"
                                                     value={
-                                                        data.car_type_id || ""
+                                                        data.car_type || ""
                                                     }
-                                                    onValueChange={(val) =>
+                                                    onChange={(e) =>
                                                         setData(
-                                                            "car_type_id",
-                                                            val,
+                                                            "car_type",
+                                                            e.target.value,
                                                         )
                                                     }
-                                                >
-                                                    <SelectTrigger id="new_car_type_id">
-                                                        <SelectValue placeholder="Pilih tipe mobil..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {carTypes.map(
-                                                            (type) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        type.id
-                                                                    }
-                                                                    value={String(
-                                                                        type.id,
-                                                                    )}
-                                                                >
-                                                                    {type.name}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                                {(errors.car_type_id ||
-                                                    localErrors.car_type_id) && (
+                                                />
+                                                {(errors.car_type ||
+                                                    localErrors.car_type) && (
                                                     <p className="text-sm text-red-600">
-                                                        {errors.car_type_id ||
-                                                            localErrors.car_type_id}
+                                                        {errors.car_type ||
+                                                            localErrors.car_type}
                                                     </p>
                                                 )}
                                             </div>
@@ -1048,8 +1019,7 @@ const CreateVoucherPurchase = forwardRef<
                                                                     car_id: "",
                                                                     plate_number:
                                                                         "",
-                                                                    car_type_id:
-                                                                        "",
+                                                                    car_type: "",
                                                                 });
                                                                 carPlateSearch.updateQuery(
                                                                     "",
@@ -1067,12 +1037,8 @@ const CreateVoucherPurchase = forwardRef<
                                                                             car_id: selected.id,
                                                                             plate_number:
                                                                                 selected.plate_number,
-                                                                            car_type_id:
-                                                                                selected.car_type_id
-                                                                                    ? String(
-                                                                                          selected.car_type_id,
-                                                                                      )
-                                                                                    : "",
+                                                                            car_type:
+                                                                                selected.car_type || "",
                                                                         },
                                                                     );
                                                                     carPlateSearch.updateQuery(
@@ -1187,60 +1153,37 @@ const CreateVoucherPurchase = forwardRef<
                                                 ) : data.plate_number ? (
                                                     <div className="space-y-2">
                                                         <Label
-                                                            htmlFor="car_type_id"
+                                                            htmlFor="car_type"
                                                             required
                                                         >
                                                             Tipe Mobil
                                                         </Label>
-                                                        <Select
+                                                        <Input
+                                                            id="car_type"
                                                             value={
-                                                                data.car_type_id ||
+                                                                data.car_type ||
                                                                 ""
                                                             }
-                                                            onValueChange={(
-                                                                value,
-                                                            ) => {
+                                                            onChange={(e) => {
                                                                 if (data.car_id)
                                                                     setData(
                                                                         "car_id",
                                                                         "",
                                                                     );
                                                                 setData(
-                                                                    "car_type_id",
-                                                                    value,
+                                                                    "car_type",
+                                                                    e.target.value,
                                                                 );
                                                             }}
                                                             disabled={
                                                                 !!selectedCar
                                                             }
-                                                        >
-                                                            <SelectTrigger id="car_type_id">
-                                                                <SelectValue placeholder="Pilih tipe mobil..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {carTypes.map(
-                                                                    (type) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                type.id
-                                                                            }
-                                                                            value={String(
-                                                                                type.id,
-                                                                            )}
-                                                                        >
-                                                                            {
-                                                                                type.name
-                                                                            }
-                                                                        </SelectItem>
-                                                                    ),
-                                                                )}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        {(errors.car_type_id ||
-                                                            localErrors.car_type_id) && (
+                                                        />
+                                                        {(errors.car_type ||
+                                                            localErrors.car_type) && (
                                                             <p className="text-sm text-red-600 mt-1">
-                                                                {errors.car_type_id ||
-                                                                    localErrors.car_type_id}
+                                                                {errors.car_type ||
+                                                                    localErrors.car_type}
                                                             </p>
                                                         )}
                                                     </div>

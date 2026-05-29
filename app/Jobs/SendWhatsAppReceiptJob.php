@@ -99,13 +99,20 @@ class SendWhatsAppReceiptJob implements ShouldQueue
             $pdfContentRaw = $pdf->output();
 
             // 2. Compose the warm caption
-            $caption = "Halo *{$customerName}*, terima kasih telah mencuci kendaraan Anda di *KURO AUTO CARE*! 🙏\n\n";
-            if($plateNumber && $this->transaction->transaction_type !== 'Paket Voucher') {
-                $caption .= "Berikut dilampirkan struk pembayaran digital resmi Anda untuk kendaraan dengan Plat Nomor *{$plateNumber}*.\n\n";
+            if ($this->transaction->transaction_type === 'Paket Voucher') {
+                $caption = "Halo *{$customerName}*,\n";
+                $caption .= "Terima kasih sudah membeli voucher cuci di Kuro Auto Care 🚘✨\n";
+                $caption .= "Berikut kami kirimkan voucher digital Kakak ya.\n\n";
+                $caption .= "Mohon ditunjukkan saat redeem di outlet 😊";
+            } else {
+                $caption = "Halo *{$customerName}*, terima kasih telah mencuci kendaraan Anda di *KURO AUTO CARE*! 🙏\n\n";
+                if ($plateNumber) {
+                    $caption .= "Berikut dilampirkan struk pembayaran digital resmi Anda untuk kendaraan dengan Plat Nomor *{$plateNumber}*.\n\n";
+                }
+                $caption .= "Enjoy your clean ride ✨ \n";
+                $caption .= "See you on your next wash 🙏\n\n";
+                $caption .= "Untuk Kritik dan Saran hubungi 0851-7800-8988";
             }
-            $caption .= "Enjoy your clean ride ✨ \n";
-            $caption .= "See you on your next wash 🙏\n\n";
-            $caption .= "Untuk Kritik dan Saran hubungi 0851-7800-8988";
 
             // 3. Send PDF using WuzAPI
             $formattedDate = $this->transaction->created_at->format('d M Y - H.i');

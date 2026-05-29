@@ -60,10 +60,7 @@ interface CarProp {
     customer: {
         name: string;
     };
-    car_type?: {
-        id: number;
-        name: string;
-    } | null;
+    car_type?: string | null;
     sales_transactions: { data: SalesTransaction[] };
 }
 const formatRupiah = (amount: number) => {
@@ -87,7 +84,6 @@ export default function CarShow() {
         PageProps<{
             car: CarProp;
             salesTransactions: any;
-            carTypes: any[];
             filters: any;
         }>
     >();
@@ -114,7 +110,7 @@ export default function CarShow() {
         plate_number: car.plate_number || "",
         model: car.model || "",
         color: car.color || "",
-        car_type_id: car.car_type?.id?.toString() || "",
+        car_type: car.car_type || "",
     });
 
     const handleEditClick = () => {
@@ -216,9 +212,7 @@ export default function CarShow() {
                                             <Car className="h-4 w-4" />
                                             Tipe Mobil
                                         </span>
-                                        <span className="font-medium">
-                                            {car.car_type?.name || "-"}
-                                        </span>
+                                            {car.car_type || "-"}
                                     </div>
                                     <div className="flex items-center justify-between"></div>
                                     <div className="flex items-center justify-between">
@@ -448,30 +442,17 @@ export default function CarShow() {
                                 )}
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="car_type_id">Tipe Mobil</Label>
-                                <Select
-                                    value={editData.car_type_id}
-                                    onValueChange={(value) =>
-                                        setEditData("car_type_id", value)
+                                <Label htmlFor="car_type">Tipe Mobil</Label>
+                                <Input
+                                    id="car_type"
+                                    value={editData.car_type}
+                                    onChange={(e) =>
+                                        setEditData("car_type", e.target.value)
                                     }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih tipe mobil..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {props.carTypes?.map((type: any) => (
-                                            <SelectItem
-                                                key={type.id}
-                                                value={type.id.toString()}
-                                            >
-                                                {type.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {editErrors.car_type_id && (
+                                />
+                                {editErrors.car_type && (
                                     <span className="text-sm text-red-500">
-                                        {editErrors.car_type_id}
+                                        {editErrors.car_type}
                                     </span>
                                 )}
                             </div>

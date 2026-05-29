@@ -85,7 +85,6 @@ export default function CarWashCreate() {
         PageProps<{
             products: Product[];
             stalls: Stall[];
-            car_types: { id: number; name: string }[];
             staffs: { id: number; full_name: string }[];
             items: ItemProp[];
         }>
@@ -206,7 +205,6 @@ export default function CarWashCreate() {
                     <CreateCashPurchase
                         ref={formRef as React.Ref<CreateCashPurchaseHandle>}
                         onSuccess={() => setIsSheetOpen(false)}
-                        carTypes={props.car_types || []}
                         items={props.items || []}
                         selectedProduct={selectedProduct}
                         selectedItems={selectedItemIds}
@@ -218,7 +216,6 @@ export default function CarWashCreate() {
                     <CreateVoucherPurchase
                         ref={formRef as any}
                         onSuccess={() => setIsSheetOpen(false)}
-                        carTypes={props.car_types || []}
                         items={props.items || []}
                         selectedProduct={selectedProduct}
                         selectedItems={selectedItemIds}

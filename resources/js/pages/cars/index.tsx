@@ -22,9 +22,7 @@ interface CarProp {
     customer: {
         name: string;
     };
-    car_type?: {
-        name: string;
-    } | null;
+    car_type?: string | null;
 }
 
 export default function CustomerIndex() {
@@ -69,7 +67,7 @@ export default function CustomerIndex() {
         { accessorKey: "model", header: "Model" },
         { accessorKey: "color", header: "Warna" },
         { 
-            accessorKey: "car_type.name", 
+            accessorKey: "car_type", 
             header: "Tipe Mobil",
             cell: (info) => (info.getValue() as string) || <span className="text-muted-foreground/50 italic">-</span>
         },
