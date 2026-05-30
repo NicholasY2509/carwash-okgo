@@ -1,0 +1,1 @@
+import{j as t}from"./ui-D3JL0KTv.js";import{c as a}from"./utils-15tqT33e.js";function x({title:s,description:e,className:r}){return t.jsxs("div",{className:a("space-y-0.5",r),children:[t.jsx("h2",{className:"text-xl font-bold tracking-tight text-primary",children:s}),e&&t.jsx("p",{className:"text-sm text-muted-foreground",children:e})]})}export{x as H};
