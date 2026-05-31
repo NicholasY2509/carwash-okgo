@@ -488,11 +488,14 @@ export default function PurchasedPacketIndex() {
         last_page: 1,
     };
     const staffList = props.staffList || [];
-    const filters = props.filters || { staff_id: "", search: "" };
+    const filters = props.filters || { staff_id: "", search: "", status: "active" };
 
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
     const [staffId, setStaffId] = useState(
         filters.staff_id ? filters.staff_id.toString() : "all",
+    );
+    const [status, setStatus] = useState(
+        filters.status ? filters.status.toString() : "active",
     );
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -646,6 +649,7 @@ export default function PurchasedPacketIndex() {
                 per_page: perPage,
                 search: debouncedSearchQuery,
                 staff_id: staffId === "all" ? "" : staffId,
+                status: status,
             },
             { preserveState: true },
         );
@@ -660,6 +664,7 @@ export default function PurchasedPacketIndex() {
                 per_page: newPerPage,
                 search: debouncedSearchQuery,
                 staff_id: staffId === "all" ? "" : staffId,
+                status: status,
             },
             { preserveState: true },
         );
@@ -674,11 +679,12 @@ export default function PurchasedPacketIndex() {
                     per_page: perPage,
                     search: debouncedSearchQuery,
                     staff_id: staffId === "all" ? "" : staffId,
+                    status: status,
                 },
                 { preserveState: true },
             );
         }
-    }, [debouncedSearchQuery, perPage, staffId]);
+    }, [debouncedSearchQuery, perPage, staffId, status]);
 
     const clearSearch = () => setSearchQuery("");
 
@@ -722,6 +728,18 @@ export default function PurchasedPacketIndex() {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active" className="text-xs">Aktif</SelectItem>
+                                    <SelectItem value="cancelled" className="text-xs">Dibatalkan</SelectItem>
+                                    <SelectItem value="all" className="text-xs">Semua</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex items-center gap-2">
                             <Select value={staffId} onValueChange={setStaffId}>

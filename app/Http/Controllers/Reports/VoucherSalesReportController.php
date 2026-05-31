@@ -16,13 +16,17 @@ class VoucherSalesReportController extends Controller
         $reportType = $request->input('report_type', 'daily');
         $startDate = $request->input('start_date', Carbon::now('Asia/Jakarta')->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
+        $staffId = $request->input('staff_id', 'all');
 
         $baseQuery = SalesTransaction::where('transaction_type', 'Paket Voucher')
             ->where('status', '!=', 'cancelled')
             ->whereBetween('transaction_date', [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay(),
-            ]);
+            ])
+            ->when($staffId !== 'all', function ($query) use ($staffId) {
+                $query->where('staff_id', $staffId);
+            });
 
         // Summary statistics
         $summaryQuery = clone $baseQuery;
@@ -41,17 +45,23 @@ class VoucherSalesReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($staffId !== 'all', function ($q) use ($staffId) {
+                    $q->where('sales_transactions.staff_id', $staffId);
+                })
                 ->count(),
         ];
 
         if ($reportType === 'daily') {
-            $data = SalesTransaction::with(['customer', 'car'])
+            $data = SalesTransaction::with(['customer', 'car', 'staff'])
                 ->where('transaction_type', 'Paket Voucher')
                 ->where('status', '!=', 'cancelled')
                 ->whereBetween('transaction_date', [
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($staffId !== 'all', function ($query) use ($staffId) {
+                    $query->where('staff_id', $staffId);
+                })
                 ->orderBy('transaction_date', 'desc')
                 ->paginate(20)
                 ->withQueryString()
@@ -61,6 +71,7 @@ class VoucherSalesReportController extends Controller
                         'transaction_date' => $row->transaction_date->toIso8601String(),
                         'customer_name' => $row->customer?->name ?? 'Walk-In Customer',
                         'plate_number' => $row->car?->plate_number,
+                        'staff_name' => $row->staff?->full_name ?? '-',
                         'transaction_type' => $row->transaction_type,
                         'payment_method' => $row->payment_method,
                         'total_amount' => (float) $row->total_amount,
@@ -80,6 +91,9 @@ class VoucherSalesReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($staffId !== 'all', function ($query) use ($staffId) {
+                    $query->where('staff_id', $staffId);
+                })
                 ->groupBy(DB::raw("DATE_FORMAT(transaction_date, '%Y-%m')"))
                 ->orderBy('month', 'desc')
                 ->paginate(20)
@@ -95,13 +109,17 @@ class VoucherSalesReportController extends Controller
                 });
         }
 
+        $staffList = \App\Models\Staff::where('work_position_id', 2)->get(['id', 'full_name as name']);
+
         return Inertia::render('reports/voucher_sales', [
             'reportData' => $data,
             'summary' => $summary,
+            'staffList' => $staffList,
             'filters' => [
                 'report_type' => $reportType,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'staff_id' => $staffId,
             ],
         ]);
     }

@@ -30,6 +30,7 @@ class CarWashController extends Controller
         $carWashTransactionTypes = ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi'];
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
+        $statusFilter = $request->input('status', 'active');
 
         $query = SalesTransaction::with([
             'car:id,plate_number,customer_id',
@@ -44,6 +45,13 @@ class CarWashController extends Controller
             ->whereIn('transaction_type', $carWashTransactionTypes)
             ->when($request->filled('staff_id'), function ($q) use ($request) {
                 $q->where('staff_id', $request->staff_id);
+            })
+            ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
+                if ($statusFilter === 'active') {
+                    $q->where('status', '!=', 'cancelled');
+                } else {
+                    $q->where('status', $statusFilter);
+                }
             });
 
         // Add search functionality
@@ -139,6 +147,7 @@ class CarWashController extends Controller
             'filters' => [
                 'staff_id' => $request->input('staff_id'),
                 'search' => $search,
+                'status' => $statusFilter,
             ]
         ]);
     }

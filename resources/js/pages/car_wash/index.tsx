@@ -268,10 +268,11 @@ export default function CarWashIndex() {
     const { props } = usePage<PageProps<{ service_records: any; staffList: any; filters: any }>>();
     const pagination = props.service_records;
     const staffList = props.staffList || [];
-    const filters = props.filters || { staff_id: "", search: "" };
+    const filters = props.filters || { staff_id: "", search: "", status: "active" };
 
     const [perPage, setPerPage] = useState(pagination.per_page || 10);
     const [staffId, setStaffId] = useState(filters.staff_id ? filters.staff_id.toString() : "all");
+    const [status, setStatus] = useState(filters.status ? filters.status.toString() : "active");
 
     const [selectedWashDetail, setSelectedWashDetail] =
         useState<ServiceRecords | null>(null);
@@ -398,9 +399,9 @@ export default function CarWashIndex() {
                         {record.status !== "cancelled" && (
                             <ResendReceiptButton transactionId={record.id} />
                         )}
-                        {/* {record.status !== "cancelled" && hasPermission("cancel transactions") && (
+                        {record.status !== "cancelled" && hasPermission("cancel transactions") && (
                             <CancelConfirmDialog record={record} onConfirm={() => { }} />
-                        )} */}
+                        )}
                     </div>
                 );
             },
@@ -410,7 +411,7 @@ export default function CarWashIndex() {
     const handlePageChange = (page: number) => {
         router.get(
             route("car-washes.index"),
-            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
+            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
             { preserveState: true },
         );
     };
@@ -419,7 +420,7 @@ export default function CarWashIndex() {
         setPerPage(newPerPage);
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
+            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
             { preserveState: true },
         );
     };
@@ -428,10 +429,10 @@ export default function CarWashIndex() {
         if (!isMounted.current) return;
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId },
+            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
             { preserveState: true },
         );
-    }, [debouncedSearchQuery, staffId]);
+    }, [debouncedSearchQuery, staffId, status]);
 
     const clearSearch = () => {
         setSearchQuery("");
@@ -477,6 +478,18 @@ export default function CarWashIndex() {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active" className="text-xs">Aktif</SelectItem>
+                                    <SelectItem value="cancelled" className="text-xs">Dibatalkan</SelectItem>
+                                    <SelectItem value="all" className="text-xs">Semua</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex items-center gap-2">
                             <Select value={staffId} onValueChange={setStaffId}>

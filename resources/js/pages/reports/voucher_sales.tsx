@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppLayout from "@/layouts/app-layout";
 import formatRupiah from "@/lib/rupiah-formatter";
 import { BreadcrumbItem } from "@/types";
@@ -19,6 +20,7 @@ interface ReportRow {
     transaction_date?: string;
     customer_name?: string;
     plate_number?: string | null;
+    staff_name?: string;
     transaction_type?: string;
     payment_method?: string;
     total_amount?: number;
@@ -78,11 +80,13 @@ export default function VoucherSalesReport() {
     const pagination = props.reportData || { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0 };
     const reportData = pagination.data || [];
     const summary = (props.summary as Summary) || {};
-    const filters = props.filters ?? { report_type: "daily", start_date: "", end_date: "" };
+    const filters = props.filters ?? { report_type: "daily", start_date: "", end_date: "", staff_id: "all" };
+    const staffList = props.staffList || [];
 
     const [reportType, setReportType] = useState(filters.report_type);
     const [startDate, setStartDate] = useState(filters.start_date);
     const [endDate, setEndDate] = useState(filters.end_date);
+    const [staffId, setStaffId] = useState(filters.staff_id || "all");
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Laporan", href: "/reports/voucher-sales" },
@@ -96,8 +100,8 @@ export default function VoucherSalesReport() {
             isMounted.current = true;
             return;
         }
-        router.get(route("reports.voucher-sales"), { report_type: reportType, start_date: startDate, end_date: endDate }, { preserveState: true });
-    }, [reportType, startDate, endDate]);
+        router.get(route("reports.voucher-sales"), { report_type: reportType, start_date: startDate, end_date: endDate, staff_id: staffId }, { preserveState: true });
+    }, [reportType, startDate, endDate, staffId]);
 
     const handleQuickFilter = (type: "today" | "this_month" | "this_year") => {
         const now = new Date();
@@ -122,6 +126,7 @@ export default function VoucherSalesReport() {
             report_type: reportType,
             start_date: startDate,
             end_date: endDate,
+            staff_id: staffId,
             page,
         }, { preserveState: true });
     };
@@ -142,6 +147,11 @@ export default function VoucherSalesReport() {
                     {row.original.plate_number && <div className="text-[10px] text-muted-foreground">{row.original.plate_number}</div>}
                 </div>
             ),
+        },
+        {
+            accessorKey: "staff_name",
+            header: "Kasir",
+            cell: ({ row }) => <span className="text-xs">{row.original.staff_name}</span>,
         },
         {
             accessorKey: "payment_method",
@@ -215,6 +225,21 @@ export default function VoucherSalesReport() {
                         <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-[140px] h-9 text-xs" />
                         <span className="text-xs text-muted-foreground">s/d</span>
                         <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-[140px] h-9 text-xs" />
+                    </div>
+
+                    {/* Kasir Filter */}
+                    <div className="flex items-center gap-2">
+                        <Select value={staffId} onValueChange={setStaffId}>
+                            <SelectTrigger className="w-[140px] h-9 text-xs">
+                                <SelectValue placeholder="Semua Kasir" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all" className="text-xs">Semua Kasir</SelectItem>
+                                {staffList.map((staff: any) => (
+                                    <SelectItem key={staff.id} value={staff.id.toString()} className="text-xs">{staff.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Quick Filters */}

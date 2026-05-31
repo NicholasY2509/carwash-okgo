@@ -21,7 +21,6 @@ import React, {
     useMemo,
 } from "react";
 import axios from "axios";
-import Swal from "sweetalert2";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CustomerSearch } from "@/pages/purchased_packets/forms/customer-search";
 import { useTransactionHandler } from "@/hooks/use-transaction-handler";
@@ -213,8 +212,10 @@ const CreateCashPurchase = forwardRef<
 
         // Memoized form validation
         const canSubmit = useMemo(() => {
-            return !!(data.car_id || data.car_plate_number);
-        }, [data.car_id, data.car_plate_number]);
+            const hasCustomer = selectedCustomer || (data.customer_name && data.customer_phone);
+            const hasCar = data.car_id || (data.car_plate_number && data.car_type);
+            return !!(hasCustomer && hasCar);
+        }, [data.car_id, data.car_plate_number, data.car_type, data.customer_name, data.customer_phone, selectedCustomer]);
 
         // Memoized summary data
         const summaryData = useMemo(() => {
@@ -369,6 +370,15 @@ const CreateCashPurchase = forwardRef<
         const validateForm = useCallback(() => {
             const newErrors: Record<string, string> = {};
 
+            if (!selectedCustomer) {
+                if (!data.customer_name || data.customer_name.trim() === "") {
+                    newErrors.customer_name = "Nama customer wajib diisi.";
+                }
+                if (!data.customer_phone || data.customer_phone.trim() === "") {
+                    newErrors.customer_phone = "Nomor telepon customer wajib diisi.";
+                }
+            }
+
             if (!data.car_id && !data.car_plate_number) {
                 newErrors.car_plate_number =
                     "Nomor polisi harus diisi atau pilih mobil terdaftar.";
@@ -379,35 +389,10 @@ const CreateCashPurchase = forwardRef<
 
             setLocalErrors(newErrors);
             return Object.keys(newErrors).length === 0;
-        }, [data.car_id, data.car_plate_number, data.car_type]);
+        }, [data.car_id, data.car_plate_number, data.car_type, data.customer_name, data.customer_phone, selectedCustomer]);
 
         const handleSubmit = useCallback(
             (footerData: FooterData) => {
-                if (!selectedCustomer) {
-                    if (
-                        !data.customer_name ||
-                        data.customer_name.trim() === ""
-                    ) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Validasi Gagal",
-                            text: "Nama customer wajib diisi!",
-                        });
-                        return;
-                    }
-                    if (
-                        !data.customer_phone ||
-                        data.customer_phone.trim() === ""
-                    ) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Validasi Gagal",
-                            text: "Nomor telepon customer wajib diisi!",
-                        });
-                        return;
-                    }
-                }
-
                 if (!validateForm()) {
                     return;
                 }
@@ -496,6 +481,11 @@ const CreateCashPurchase = forwardRef<
                                     }
                                     required={!selectedCustomer}
                                 />
+                                {(errors.customer_name || localErrors.customer_name) && (
+                                    <p className="text-sm text-red-600 mt-1">
+                                        {errors.customer_name || localErrors.customer_name}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -519,9 +509,9 @@ const CreateCashPurchase = forwardRef<
                                         !!carPlateSearch.query
                                     }
                                 />
-                                {errors.customer_phone && (
+                                {(errors.customer_phone || localErrors.customer_phone) && (
                                     <p className="text-sm text-red-600 mt-1">
-                                        {errors.customer_phone}
+                                        {errors.customer_phone || localErrors.customer_phone}
                                     </p>
                                 )}
                             </div>
@@ -566,70 +556,70 @@ const CreateCashPurchase = forwardRef<
                             {(!selectedCustomer ||
                                 selectedCustomer.cars.length === 0 ||
                                 isNewCar) && (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="car_plate_number"
-                                            required
-                                        >
-                                            Nomor Polisi
-                                        </Label>
-                                        <CarPlateSearch
-                                            value={carPlateSearch.query}
-                                            onValueChange={handleCarPlateChange}
-                                            searchResults={
-                                                carPlateSearch.results
-                                            }
-                                            isSearching={
-                                                carPlateSearch.isSearching
-                                            }
-                                            showDropdown={
-                                                carPlateSearch.showDropdown
-                                            }
-                                            onFocus={
-                                                carPlateSearch.openDropdown
-                                            }
-                                            onSelect={handleCarPlateSelect}
-                                            onCloseDropdown={
-                                                carPlateSearch.closeDropdown
-                                            }
-                                        />
-                                        {(errors.car_plate_number ||
-                                            localErrors.car_plate_number) && (
-                                            <p className="text-sm text-red-600 mt-1">
-                                                {errors.car_plate_number ||
-                                                    localErrors.car_plate_number}
-                                            </p>
-                                        )}
-                                    </div>
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label
+                                                htmlFor="car_plate_number"
+                                                required
+                                            >
+                                                Nomor Polisi
+                                            </Label>
+                                            <CarPlateSearch
+                                                value={carPlateSearch.query}
+                                                onValueChange={handleCarPlateChange}
+                                                searchResults={
+                                                    carPlateSearch.results
+                                                }
+                                                isSearching={
+                                                    carPlateSearch.isSearching
+                                                }
+                                                showDropdown={
+                                                    carPlateSearch.showDropdown
+                                                }
+                                                onFocus={
+                                                    carPlateSearch.openDropdown
+                                                }
+                                                onSelect={handleCarPlateSelect}
+                                                onCloseDropdown={
+                                                    carPlateSearch.closeDropdown
+                                                }
+                                            />
+                                            {(errors.car_plate_number ||
+                                                localErrors.car_plate_number) && (
+                                                    <p className="text-sm text-red-600 mt-1">
+                                                        {errors.car_plate_number ||
+                                                            localErrors.car_plate_number}
+                                                    </p>
+                                                )}
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="car_type" required>
-                                            Tipe Mobil
-                                        </Label>
-                                        <Input
-                                            id="car_type"
-                                            value={data.car_type}
-                                            onChange={(e) => {
-                                                if (data.car_id) setData("car_id", null);
-                                                setData("car_type", e.target.value);
-                                            }}
-                                            disabled={
-                                                !!carPlateSearch.query &&
-                                                !!selectedCustomer &&
-                                                !isNewCar
-                                            }
-                                        />
-                                        {(errors.car_type ||
-                                            localErrors.car_type) && (
-                                            <p className="text-sm text-red-600 mt-1">
-                                                {errors.car_type ||
-                                                    localErrors.car_type}
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="car_type" required>
+                                                Tipe Mobil
+                                            </Label>
+                                            <Input
+                                                id="car_type"
+                                                value={data.car_type}
+                                                onChange={(e) => {
+                                                    if (data.car_id) setData("car_id", null);
+                                                    setData("car_type", e.target.value);
+                                                }}
+                                                disabled={
+                                                    !!carPlateSearch.query &&
+                                                    !!selectedCustomer &&
+                                                    !isNewCar
+                                                }
+                                            />
+                                            {(errors.car_type ||
+                                                localErrors.car_type) && (
+                                                    <p className="text-sm text-red-600 mt-1">
+                                                        {errors.car_type ||
+                                                            localErrors.car_type}
+                                                    </p>
+                                                )}
+                                        </div>
+                                    </>
+                                )}
                         </div>
 
                         {/* Inventory Items Selection Checklist */}
@@ -687,7 +677,7 @@ const CreateCashPurchase = forwardRef<
                                                                 (+
                                                                 {currencyFormatter.format(
                                                                     item.price ||
-                                                                        0,
+                                                                    0,
                                                                 )}
                                                                 )
                                                             </span>
@@ -725,11 +715,10 @@ const CreateCashPurchase = forwardRef<
                                                 return (
                                                     <div
                                                         key={item.id}
-                                                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
-                                                            isChecked
+                                                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${isChecked
                                                                 ? "border-blue-200 bg-blue-50/30"
                                                                 : "border-muted bg-card hover:bg-muted/30"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <Checkbox
@@ -779,7 +768,7 @@ const CreateCashPurchase = forwardRef<
                                                                     <span className="text-[10px] text-emerald-600 font-semibold mt-0.5">
                                                                         {currencyFormatter.format(
                                                                             item.price ||
-                                                                                0,
+                                                                            0,
                                                                         )}
                                                                     </span>
                                                                 )}

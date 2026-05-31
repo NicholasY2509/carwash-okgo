@@ -420,18 +420,6 @@ export default function CarWashCreate() {
                                 onClose={() => setIsSheetOpen(false)}
                                 footerError={footerError}
                                 isSubmitting={isSubmitting}
-                                canSubmit={
-                                    activeForm === "Voucher"
-                                        ? (formRef.current?.canSubmit?.() ??
-                                          false)
-                                        : activeForm === "Return"
-                                          ? (formRef.current?.canSubmit?.() ??
-                                            false)
-                                          : activeForm === "Cash"
-                                            ? (formRef.current?.canSubmit?.() ??
-                                              false)
-                                            : true
-                                }
                             />
                         </SheetContent>
                     </Sheet>

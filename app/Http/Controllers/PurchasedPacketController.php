@@ -24,6 +24,7 @@ class PurchasedPacketController extends Controller
     {
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
+        $statusFilter = $request->input('status', 'active');
 
         $query = SalesTransaction::with([
             'customer:id,name',
@@ -37,6 +38,13 @@ class PurchasedPacketController extends Controller
         ->where('transaction_type', 'Paket Voucher')
         ->when($request->filled('staff_id'), function ($q) use ($request) {
             $q->where('staff_id', $request->staff_id);
+        })
+        ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
+            if ($statusFilter === 'active') {
+                $q->where('status', '!=', 'cancelled');
+            } else {
+                $q->where('status', $statusFilter);
+            }
         });
 
         if (!empty($search)) {
@@ -87,6 +95,7 @@ class PurchasedPacketController extends Controller
             'filters' => [
                 'staff_id' => $request->input('staff_id'),
                 'search' => $search,
+                'status' => $statusFilter,
             ]
         ]);
     }
@@ -282,8 +291,12 @@ class PurchasedPacketController extends Controller
             $transaction = SalesTransaction::with('purchasedPackets')->findOrFail($id);
             $transaction->update(['status' => 'cancelled']);
             $transaction->purchasedPackets()->update(['status' => 'cancelled']);
+            
+            $packetIds = $transaction->purchasedPackets->pluck('id');
+            \App\Models\Voucher::whereIn('purchased_packet_id', $packetIds)->update(['status' => 'Void']);
+
             DB::commit();
-            return back()->with('success', 'Transaksi berhasil dibatalkan.');
+            return back()->with('success', 'Transaksi berhasil dibatalkan dan voucher telah divoid.');
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::error($th);
