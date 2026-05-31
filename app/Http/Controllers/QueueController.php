@@ -11,7 +11,7 @@ class QueueController extends Controller
     public function index(Request $request){
         $date = $request->input('date', \Carbon\Carbon::today()->toDateString());
 
-        $serviceRecords = ServiceRecord::with('car.carType')
+        $serviceRecords = ServiceRecord::with('car')
             ->whereIn('queue_status', ['pending', 'ongoing', 'finished'])
             ->whereDate('created_at', $date)
             ->orderBy('created_at', 'asc')
@@ -32,6 +32,15 @@ class QueueController extends Controller
 
         $serviceRecord = ServiceRecord::findOrFail($id);
         $serviceRecord->queue_status = $request->status;
+        
+        if ($request->status === 'ongoing' && !$serviceRecord->queue_ongoing_at) {
+            $serviceRecord->queue_ongoing_at = now();
+        } elseif ($request->status === 'finished' && !$serviceRecord->queue_finished_at) {
+            $serviceRecord->queue_finished_at = now();
+        } elseif ($request->status === 'settled' && !$serviceRecord->queue_settled_at) {
+            $serviceRecord->queue_settled_at = now();
+        }
+
         $serviceRecord->save();
 
         return redirect()->back()->with('success', 'Status updated successfully');

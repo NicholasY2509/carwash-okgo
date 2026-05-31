@@ -227,6 +227,11 @@ const allNavItems = {
                     url: "/reports/split-profit",
                     permission: "report split profit",
                 },
+                {
+                    title: "Waktu Antrian",
+                    url: "/reports/queue",
+                    permission: "queue",
+                },
             ],
         },
         {

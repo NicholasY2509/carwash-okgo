@@ -19,10 +19,17 @@ class ServiceRecord extends Model
         'payment_id',
         'payment_type',
         'status',
+        'queue_status',
+        'queue_ongoing_at',
+        'queue_finished_at',
+        'queue_settled_at',
     ];
 
     protected $casts = [
         'service_date' => 'datetime',
+        'queue_ongoing_at' => 'datetime',
+        'queue_finished_at' => 'datetime',
+        'queue_settled_at' => 'datetime',
     ];
 
     protected static function booted()

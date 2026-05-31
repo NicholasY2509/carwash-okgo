@@ -27,6 +27,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\Reports\CarWashRevenueReportController;
 use App\Http\Controllers\Reports\VoucherSalesReportController;
 use App\Http\Controllers\Reports\StockReportController;
+use App\Http\Controllers\Reports\QueueReportController;
 use App\Http\Controllers\QueueController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
@@ -106,6 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('voucher-sales', [VoucherSalesReportController::class, 'index'])->name('reports.voucher-sales')->middleware('permission:report voucher sales');
         Route::get('stock', [StockReportController::class, 'index'])->name('reports.stock')->middleware('permission:report stock');
         Route::get('split-profit', [\App\Http\Controllers\Reports\SplitProfitReportController::class, 'index'])->name('reports.split-profit')->middleware('permission:report split profit');
+        Route::get('queue', [QueueReportController::class, 'index'])->name('reports.queue')->middleware('permission:queue');
     });
 
     // Vouchers
