@@ -504,6 +504,7 @@ export default function VoucherIndex() {
         { value: "Sold", label: "Sold" },
         { value: "Redeemed", label: "Redeemed" },
         { value: "Expired", label: "Expired" },
+        { value: "Void", label: "Void" },
     ];
 
     const columns: ColumnDef<VoucherProp>[] = [
@@ -534,7 +535,7 @@ export default function VoucherIndex() {
                 const status = row.getValue("status") as string;
                 const getVariant = () => {
                     const s = status.toLowerCase();
-                    if (s === "redeemed") return "destructive";
+                    if (s === "redeemed" || s === "void") return "destructive";
                     if (s === "active" || s === "available") return "default";
                     return "secondary";
                 };

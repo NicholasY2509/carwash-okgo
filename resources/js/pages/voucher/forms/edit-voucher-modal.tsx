@@ -31,6 +31,7 @@ const statusOptions = [
     { value: "Sold", label: "Sold" },
     { value: "Redeemed", label: "Redeemed" },
     { value: "Expired", label: "Expired" },
+    { value: "Void", label: "Void" },
 ];
 
 export default function EditVoucherModal({ open, onClose, voucherTypes, onSuccess }: EditVoucherModalProps) {
