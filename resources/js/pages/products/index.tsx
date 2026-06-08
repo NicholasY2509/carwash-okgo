@@ -4,7 +4,7 @@ import { Modal, ModalHeader } from "@/components/ui/modal";
 import AppLayout from "@/layouts/app-layout";
 import { BreadcrumbItem, PageProps } from "@/types";
 import { Head, Link, usePage } from "@inertiajs/react";
-import { Edit, Plus, Trash } from "lucide-react";
+import { Edit, Plus } from "lucide-react";
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -118,15 +118,6 @@ export default function ProductIndex() {
                         }}
                     >
                         <Edit />
-                    </Button>
-                    <Button
-                        size="icon"
-                        variant={"destructive"}
-                        onClick={() => {
-                            const productId = row.row.original.id;
-                        }}
-                    >
-                        <Trash />
                     </Button>
                 </div>
             ),
