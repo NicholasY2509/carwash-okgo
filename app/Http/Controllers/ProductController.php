@@ -29,6 +29,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'description' => 'nullable|string',
+            'is_active' => 'boolean',
             'is_split_profits' => 'boolean',
             'splits' => 'required_if:is_split_profits,true|array',
             'splits.*.party_id' => 'required_with:splits|exists:parties,id',
@@ -52,6 +53,7 @@ class ProductController extends Controller
                 'name' => $request->name,
                 'price' => $request->price,
                 'description' => $request->description,
+                'is_active' => $request->boolean('is_active', true),
                 'is_split_profits' => (bool)$request->is_split_profits,
             ]);
 
@@ -82,6 +84,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'description' => 'nullable|string',
+            'is_active' => 'boolean',
             'is_split_profits' => 'boolean',
             'splits' => 'required_if:is_split_profits,true|array',
             'splits.*.party_id' => 'required_with:splits|exists:parties,id',
@@ -106,6 +109,7 @@ class ProductController extends Controller
                 'name' => $request->name,
                 'price' => $request->price,
                 'description' => $request->description,
+                'is_active' => $request->boolean('is_active', true),
                 'is_split_profits' => (bool)$request->is_split_profits,
             ]);
 

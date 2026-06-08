@@ -26,6 +26,7 @@ interface Product {
     name: string;
     description: string;
     price: number;
+    is_active: boolean;
     is_split_profits: boolean;
     splits?: ProductSplitProp[];
 }
@@ -55,6 +56,7 @@ export default function ProductForm({
         name: product?.name || "",
         description: product?.description || "",
         price: product?.price?.toString() || "",
+        is_active: product?.is_active ?? true,
         is_split_profits: product?.is_split_profits || false,
         splits: initialSplits as { party_id: string; percentage: string }[],
     });
@@ -239,6 +241,30 @@ export default function ProductForm({
                             {errors.description}
                         </p>
                     )}
+                </div>
+
+                {/* Is Active Checkbox Section */}
+                <div className="pt-4 border-t space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            id="is_active"
+                            checked={data.is_active}
+                            onCheckedChange={(checked) => {
+                                setData("is_active", !!checked);
+                            }}
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                            <Label
+                                htmlFor="is_active"
+                                className="cursor-pointer font-semibold text-sm"
+                            >
+                                Status Aktif
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                                Centang jika produk ini masih aktif dan dapat dipilih saat transaksi.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Profit Split Checkbox Section */}

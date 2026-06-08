@@ -159,6 +159,7 @@ class CarWashController extends Controller
     {
         // Only load essential data to prevent large headers
         $products = Product::select(['id', 'name', 'price'])
+            ->where('is_active', true)
             ->with(['items' => function ($query) {
                 $query->select('items.id', 'items.name', 'items.stock');
             }])

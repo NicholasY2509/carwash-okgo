@@ -33,6 +33,7 @@ interface ProductProp {
     name: string;
     description: string;
     price: number;
+    is_active: boolean;
     is_split_profits: boolean;
     splits?: ProductSplitProp[];
     created_at: string;
@@ -75,6 +76,18 @@ export default function ProductIndex() {
                     currency: "IDR",
                     minimumFractionDigits: 0,
                 }).format(info.getValue() as number),
+        },
+        {
+            accessorKey: "is_active",
+            header: "Status",
+            cell: ({ row }) => {
+                const active = row.original.is_active;
+                return (
+                    <span className={`text-xs font-semibold ${active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground italic"}`}>
+                        {active ? "Aktif" : "Tidak Aktif"}
+                    </span>
+                );
+            }
         },
         {
             accessorKey: "is_split_profits",

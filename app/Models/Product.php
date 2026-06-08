@@ -11,10 +11,12 @@ class Product extends Model
         'description',
         'price',
         'is_split_profits',
+        'is_active',
     ];
 
     protected $casts = [
         'is_split_profits' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
