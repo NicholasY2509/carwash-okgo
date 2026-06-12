@@ -152,7 +152,9 @@ class PurchasedPacketController extends Controller
                     ->orderBy('serial_number', 'desc')
                     ->first();
                 if ($latestVoucher) {
-                    $lastNumberStr = str_replace($autogeneratePrefix, '', $latestVoucher->serial_number);
+                    $serialWithoutPrefix = str_replace($autogeneratePrefix, '', $latestVoucher->serial_number);
+                    $parts = explode('-', $serialWithoutPrefix);
+                    $lastNumberStr = $parts[0];
                     if (is_numeric($lastNumberStr)) {
                         $lastNumber = (int) $lastNumberStr;
                     }
@@ -175,13 +177,14 @@ class PurchasedPacketController extends Controller
                 $purchasedPackets[] = $purchased_packet;
                 
                 if ($voucher_packet->autogenerate_vouchers) {
+                    $dateSuffix = '-' . Carbon::now('Asia/Jakarta')->format('dmY');
                     for ($j = 0; $j < $vouchersPerPacket; $j++) {
                         $lastNumber++;
-                        $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT);
+                        $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT) . $dateSuffix;
                         
                         while(Voucher::where('serial_number', $serialNumber)->exists()) {
                             $lastNumber++;
-                            $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT);
+                            $serialNumber = $autogeneratePrefix . str_pad($lastNumber, 4, '0', STR_PAD_LEFT) . $dateSuffix;
                         }
                         
                         Voucher::create([
