@@ -30,6 +30,7 @@ interface VoucherPacket {
     id: number;
     name: string;
     price: number;
+    incentive_amount: number;
     quantity: number;
     valid_period_months: number;
     has_unlimited_issuance: boolean;
@@ -63,6 +64,7 @@ const VoucherPacketForm = forwardRef<
     const { setData, data, post, patch, processing, errors, reset } = useForm({
         name: voucherPacket?.name ?? "",
         price: voucherPacket?.price?.toString() ?? "",
+        incentive_amount: voucherPacket?.incentive_amount?.toString() ?? "",
         quantity: voucherPacket?.quantity?.toString() ?? "",
         valid_period_months:
             voucherPacket?.valid_period_months?.toString() ?? "",
@@ -180,6 +182,30 @@ const VoucherPacketForm = forwardRef<
                     {errors.price && (
                         <p className="mt-1 text-sm text-red-600">
                             {errors.price}
+                        </p>
+                    )}
+                </div>
+
+                <div>
+                    <Label htmlFor="incentive_amount">Insentif per Packet</Label>
+                    <NumericFormat
+                        id="incentive_amount"
+                        customInput={Input}
+                        prefix={"Rp "}
+                        thousandSeparator="."
+                        decimalSeparator=","
+                        value={data.incentive_amount}
+                        onValueChange={(values) => {
+                            setData(
+                                "incentive_amount",
+                                values.floatValue?.toString() || "0",
+                            );
+                        }}
+                        className="mt-1"
+                    />
+                    {errors.incentive_amount && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.incentive_amount}
                         </p>
                     )}
                 </div>

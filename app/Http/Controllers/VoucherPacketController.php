@@ -28,6 +28,7 @@ class VoucherPacketController extends Controller
             $voucher_packet = new VoucherPacket();
             $voucher_packet->name = $request->name;
             $voucher_packet->price = $request->price;
+            $voucher_packet->incentive_amount = $request->incentive_amount;
             $voucher_packet->quantity = $request->quantity;
             $voucher_packet->valid_period_months = $request->valid_period_months;
             $voucher_packet->has_unlimited_issuance = $request->has_unlimited_issuance;
@@ -55,6 +56,7 @@ class VoucherPacketController extends Controller
              $voucher_packet = VoucherPacket::with('voucherType')->findOrFail($id);
              $voucher_packet->name = $request->name;
              $voucher_packet->price = $request->price;
+             $voucher_packet->incentive_amount = $request->incentive_amount;
              $voucher_packet->quantity = $request->quantity;
              $voucher_packet->valid_period_months = $request->valid_period_months;
              $voucher_packet->has_unlimited_issuance = $request->has_unlimited_issuance;

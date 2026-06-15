@@ -22,6 +22,7 @@ interface VoucherPacketProp {
     id: number;
     name: string;
     price: number;
+    incentive_amount: number;
     quantity: number;
     valid_period_months: number;
     has_unlimited_issuance: boolean;
@@ -85,6 +86,16 @@ export default function VoucherPacketIndex() {
         {
             accessorKey: "price",
             header: "Harga",
+            cell: (info) =>
+                new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                }).format(info.getValue() as number),
+        },
+        {
+            accessorKey: "incentive_amount",
+            header: "Insentif",
             cell: (info) =>
                 new Intl.NumberFormat("id-ID", {
                     style: "currency",

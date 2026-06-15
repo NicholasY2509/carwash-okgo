@@ -25,6 +25,7 @@ class CreateVoucherPacketRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'incentive_amount' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:1',
             'valid_period_months' => 'required|integer|min:1',
             'has_unlimited_issuance' => 'required|boolean',
@@ -38,6 +39,8 @@ class CreateVoucherPacketRequest extends FormRequest
             'name.required' => 'Nama packet wajib diisi.',
             'price.required' => 'Harga wajib diisi.',
             'price.numeric' => 'Harga harus berupa angka.',
+            'incentive_amount.required' => 'Insentif wajib diisi.',
+            'incentive_amount.numeric' => 'Insentif harus berupa angka.',
             'quantity.required' => 'Jumlah voucher wajib diisi.',
             'quantity.integer' => 'Jumlah voucher harus berupa angka bulat.',
             'valid_period_months.required' => 'Masa aktif wajib diisi.',
