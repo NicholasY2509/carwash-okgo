@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CashierIncentiveTier;
 use App\Models\Staff;
 use App\Models\PurchasedPacket;
 use Carbon\Carbon;
@@ -19,8 +18,6 @@ class CashierIncentiveController extends Controller
         $startDateTime = Carbon::parse($startDate)->startOfDay();
         $endDateTime = Carbon::parse($endDate)->endOfDay();
 
-        $tiers = CashierIncentiveTier::orderBy('min_packets', 'asc')->get();
-
         $staffReport = Staff::query()
             ->select('staffs.*')
             ->addSelect([
@@ -29,8 +26,16 @@ class CashierIncentiveController extends Controller
                     ->whereColumn('sales_transactions.staff_id', 'staffs.id')
                     ->whereBetween('sales_transactions.transaction_date', [$startDateTime, $endDateTime])
                     ->where('sales_transactions.status', '!=', 'cancelled'),
+                
                 'gross_income' => PurchasedPacket::selectRaw('sum(purchased_packets.price)')
                     ->join('sales_transactions', 'sales_transactions.id', '=', 'purchased_packets.sales_transaction_id')
+                    ->whereColumn('sales_transactions.staff_id', 'staffs.id')
+                    ->whereBetween('sales_transactions.transaction_date', [$startDateTime, $endDateTime])
+                    ->where('sales_transactions.status', '!=', 'cancelled'),
+
+                'total_incentive' => PurchasedPacket::selectRaw('COALESCE(SUM(voucher_packets.incentive_amount), 0)')
+                    ->join('sales_transactions', 'sales_transactions.id', '=', 'purchased_packets.sales_transaction_id')
+                    ->join('voucher_packets', 'voucher_packets.id', '=', 'purchased_packets.voucher_packet_id')
                     ->whereColumn('sales_transactions.staff_id', 'staffs.id')
                     ->whereBetween('sales_transactions.transaction_date', [$startDateTime, $endDateTime])
                     ->where('sales_transactions.status', '!=', 'cancelled')
@@ -38,29 +43,10 @@ class CashierIncentiveController extends Controller
             ->orderBy('packets_sold_count', 'desc')
             ->get();
 
-        $staffReport = $staffReport->map(function ($staff) use ($tiers) {
-            $count = $staff->packets_sold_count ?? 0;
-            $grossIncome = (float) ($staff->gross_income ?? 0);
-
-            $totalIncentive = 0;
-            $matchingTierName = 'Tanpa Tier';
-
-            // Find the correct tier
-            $achievedTier = null;
-            foreach ($tiers as $tier) {
-                if ($count >= $tier->min_packets && ($tier->max_packets === null || $count <= $tier->max_packets)) {
-                    $achievedTier = $tier;
-                }
-            }
-
-            if ($achievedTier) {
-                $totalIncentive = $count * $achievedTier->commission_per_packet;
-                $matchingTierName = $achievedTier->name;
-            }
-
-            $staff->tier_name = $matchingTierName;
-            $staff->total_incentive = $totalIncentive;
-            $staff->gross_income = $grossIncome;
+        $staffReport = $staffReport->map(function ($staff) {
+            $staff->packets_sold_count = $staff->packets_sold_count ?? 0;
+            $staff->gross_income = (float) ($staff->gross_income ?? 0);
+            $staff->total_incentive = (float) ($staff->total_incentive ?? 0);
             
             return $staff;
         });
@@ -76,7 +62,6 @@ class CashierIncentiveController extends Controller
 
         return Inertia::render('cashier_incentives/index', [
             'staffReport' => $staffReport,
-            'tiers' => $tiers,
             'totalPackets' => $totalPackets,
             'totalIncentive' => $totalIncentiveSum,
             'totalGrossIncome' => $totalGrossIncome,

@@ -127,6 +127,7 @@ export default function CarWashRevenueReport() {
         staff_id: "",
     };
     const staffList = (props.staffList as Staff[]) || [];
+    const isKasir = props.auth?.roles?.includes("Kasir");
 
     const [reportType, setReportType] = useState(filters.report_type);
     const [startDate, setStartDate] = useState(filters.start_date);
@@ -371,6 +372,7 @@ export default function CarWashRevenueReport() {
                 </div>
 
                 {/* Filters Pane (Horizontal) */}
+                {!isKasir && (
                 <div className="flex flex-col md:flex-row items-center gap-4 bg-card border rounded-xl p-4 shadow-xs w-full">
                     {/* Tipe Selector */}
                     <div className="flex items-center gap-2">
@@ -469,6 +471,7 @@ export default function CarWashRevenueReport() {
                         </Button>
                     </div>
                 </div>
+                )}
 
                 {/* Summary Cards */}
                 <motion.div

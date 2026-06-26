@@ -14,10 +14,20 @@ class CarWashRevenueReportController extends Controller
 {
     public function index(Request $request)
     {
-        $reportType = $request->input('report_type', 'daily'); // 'daily' or 'monthly'
-        $startDate = $request->input('start_date', Carbon::now('Asia/Jakarta')->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
-        $staffId = $request->input('staff_id');
+        $user = $request->user();
+        $isKasir = $user && $user->hasRole('Kasir');
+
+        if ($isKasir) {
+            $reportType = 'daily';
+            $startDate = Carbon::now('Asia/Jakarta')->format('Y-m-d');
+            $endDate = $startDate;
+            $staffId = optional($user->staff)->id ?? -1;
+        } else {
+            $reportType = $request->input('report_type', 'daily');
+            $startDate = $request->input('start_date', Carbon::now('Asia/Jakarta')->startOfMonth()->format('Y-m-d'));
+            $endDate = $request->input('end_date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
+            $staffId = $request->input('staff_id');
+        }
 
         $carWashTypes = ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi'];
 

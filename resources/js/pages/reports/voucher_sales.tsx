@@ -82,6 +82,7 @@ export default function VoucherSalesReport() {
     const summary = (props.summary as Summary) || {};
     const filters = props.filters ?? { report_type: "daily", start_date: "", end_date: "", staff_id: "all" };
     const staffList = props.staffList || [];
+    const isKasir = props.auth?.roles?.includes("Kasir");
 
     const [reportType, setReportType] = useState(filters.report_type);
     const [startDate, setStartDate] = useState(filters.start_date);
@@ -209,6 +210,7 @@ export default function VoucherSalesReport() {
                 </div>
 
                 {/* Filters Pane (Horizontal) */}
+                {!isKasir && (
                 <div className="flex flex-col md:flex-row items-center gap-4 bg-card border rounded-xl p-4 shadow-xs w-full">
                     {/* Tipe Selector */}
                     <div className="flex items-center gap-2">
@@ -249,6 +251,7 @@ export default function VoucherSalesReport() {
                         <Button variant="outline" size="sm" onClick={() => handleQuickFilter("this_year")} className="h-8 text-xs">Tahun Ini</Button>
                     </div>
                 </div>
+                )}
 
                 {/* Summary Cards */}
                 <motion.div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" variants={containerVariants} initial="hidden" animate="show">

@@ -15,17 +15,8 @@ interface Staff {
     id: number;
     full_name: string;
     packets_sold_count: number;
-    tier_name: string;
     total_incentive: number;
     gross_income: number;
-}
-
-interface CashierIncentiveTier {
-    id: number;
-    name: string;
-    min_packets: number;
-    max_packets: number | null;
-    commission_per_packet: number;
 }
 
 const formatToIDR = (value: number) => {
@@ -39,7 +30,6 @@ const formatToIDR = (value: number) => {
 export default function CashierIncentivesIndex() {
     const { props } = usePage<any>();
     const staffReport = (props.staffReport as Staff[]) || [];
-    const tiers = (props.tiers as CashierIncentiveTier[]) || [];
     const totalPackets = props.totalPackets ?? 0;
     const totalIncentive = props.totalIncentive ?? 0;
     const totalGrossIncome = props.totalGrossIncome ?? 0;
@@ -132,28 +122,6 @@ export default function CashierIncentivesIndex() {
             ),
         },
         {
-            accessorKey: "tier_name",
-            header: "Pencapaian Tier",
-            cell: (info) => {
-                const tierName = info.getValue() as string;
-                let badgeClass =
-                    "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
-
-                if (tierName !== "Tanpa Tier") {
-                    badgeClass =
-                        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
-                }
-
-                return (
-                    <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeClass}`}
-                    >
-                        {tierName}
-                    </span>
-                );
-            },
-        },
-        {
             accessorKey: "total_incentive",
             header: "Total Insentif",
             cell: (info) => (
@@ -190,7 +158,7 @@ export default function CashierIncentivesIndex() {
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <Heading
                         title="Insentif Penjualan Kasir"
-                        description="Laporan detail penjualan paket voucher per staff dan komisi insentif berdasarkan target tier."
+                        description="Laporan detail penjualan paket voucher per staff dan komisi insentif."
                     />
                     <div className="flex flex-col gap-2 bg-card border rounded-xl p-3 shadow-xs sm:flex-row sm:items-center">
                         <div className="flex items-center gap-2">
@@ -234,7 +202,7 @@ export default function CashierIncentivesIndex() {
                 </div>
 
                 <motion.div
-                    className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+                    className="grid gap-4 md:grid-cols-3"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
@@ -279,7 +247,7 @@ export default function CashierIncentivesIndex() {
                     </motion.div>
 
                     <motion.div variants={cardVariants}>
-                        <Card className="shadow-sm border bg-gradient-to-tr from-blue-500/5 via-card to-card hover:shadow-md transition-shadow">
+                        <Card className="shadow-sm border bg-gradient-to-tr from-blue-500/5 via-card to-card hover:shadow-md transition-shadow h-full">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-semibold">
                                     Total Pendapatan Kotor
@@ -293,49 +261,6 @@ export default function CashierIncentivesIndex() {
                                 <p className="text-xs text-muted-foreground mt-1">
                                     Total pemasukan dari paket voucher
                                 </p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    <motion.div variants={cardVariants}>
-                        <Card className="shadow-sm border hover:shadow-md transition-shadow">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-semibold">
-                                    Konfigurasi Tier Aktif
-                                </CardTitle>
-                                <Award className="h-5 w-5 text-indigo-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-1.5 max-h-[80px] overflow-y-auto pr-1">
-                                    {tiers.length > 0 ? (
-                                        tiers.map((t) => (
-                                            <div
-                                                key={t.id}
-                                                className="flex justify-between text-xs items-center"
-                                            >
-                                                <span className="font-semibold text-muted-foreground">
-                                                    {t.name} (
-                                                    {t.max_packets
-                                                        ? `${t.min_packets}-${t.max_packets}`
-                                                        : `>${t.min_packets}`}{" "}
-                                                    paket)
-                                                </span>
-                                                <span className="font-bold text-emerald-600">
-                                                    {formatToIDR(
-                                                        t.commission_per_packet,
-                                                    )}{" "}
-                                                    / paket
-                                                </span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="flex items-center gap-1 text-xs text-amber-600">
-                                            <Info className="h-3 w-3" />
-                                            Belum ada tier. Atur di Master
-                                            Insentif Kasir.
-                                        </div>
-                                    )}
-                                </div>
                             </CardContent>
                         </Card>
                     </motion.div>
