@@ -119,6 +119,7 @@ class DashboardController extends Controller
     {
         return SalesTransaction::query()
             ->whereDate('created_at', $today)
+            ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
     }
 
@@ -131,6 +132,7 @@ class DashboardController extends Controller
             )
             ->whereDate('created_at', $today)
             ->whereIn('transaction_type', ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi'])
+            ->where('status', '!=', 'cancelled')
             ->groupBy('payment_method')
             ->get()
             ->map(function ($item) {
@@ -146,6 +148,7 @@ class DashboardController extends Controller
         $sales = PurchasedPacket::with('voucherPacket')
             ->whereNotNull('sales_transaction_id')
             ->whereBetween('purchased_at', [$todayStart, $todayEnd])
+            ->where('status', '!=', 'cancelled')
             ->get()
             ->groupBy(function ($packet) {
                 return $packet->voucherPacket->name ?? 'Unknown';
@@ -175,6 +178,7 @@ class DashboardController extends Controller
             ->whereDate('transaction_date', $today)
             ->whereIn('transaction_type', ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi', 'Paket Voucher'])
             ->where('payment_method', 'Cash')
+            ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
     }
 
@@ -184,6 +188,7 @@ class DashboardController extends Controller
             ->whereDate('transaction_date', $today)
             ->whereIn('transaction_type', ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi', 'Paket Voucher'])
             ->where('payment_method', '!=', 'Cash')
+            ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
     }
 
@@ -196,6 +201,7 @@ class DashboardController extends Controller
         ])
             ->whereIn('transaction_type', ['Klaim Garansi', 'Cuci Mobil'])
             ->whereDate('transaction_date', $today)
+            ->where('status', '!=', 'cancelled')
             ->orderBy('transaction_date', 'desc')
             ->limit(5)
             ->get();
@@ -216,12 +222,14 @@ class DashboardController extends Controller
             $carWashRevenue = SalesTransaction::query()
                 ->whereBetween('created_at', [$dayStart, $dayEnd])
                 ->whereIn('transaction_type', ['Cuci Mobil', 'Cuci Mobil Voucher', 'Klaim Garansi'])
+                ->where('status', '!=', 'cancelled')
                 ->sum('total_amount');
 
             // Get voucher sales revenue for this day
             $voucherSalesRevenue = SalesTransaction::query()
                 ->whereBetween('created_at', [$dayStart, $dayEnd])
                 ->where('transaction_type', 'Paket Voucher')
+                ->where('status', '!=', 'cancelled')
                 ->sum('total_amount');
 
             // Total revenue for this day
