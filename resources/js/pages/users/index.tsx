@@ -53,7 +53,15 @@ export default function UserIndex() {
                 const userRoles = row.original.roles;
                 // If the user has a role, display it in a badge
                 if (userRoles && userRoles.length > 0) {
-                    return <Badge variant="outline">{userRoles[0].name}</Badge>;
+                    return (
+                        <div className="flex gap-1 flex-wrap">
+                            {userRoles.map((role) => (
+                                <Badge key={role.id} variant="outline">
+                                    {role.name}
+                                </Badge>
+                            ))}
+                        </div>
+                    );
                 }
                 // Otherwise, show a placeholder
                 return <span className="text-muted-foreground">-</span>;
