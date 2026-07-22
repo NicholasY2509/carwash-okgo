@@ -539,7 +539,7 @@ class CarWashController extends Controller
             
             if ($transaction->voucher) {
                 $transaction->voucher->update([
-                    'status' => 'Aktif',
+                    'status' => 'Sold',
                     'sales_transaction_id' => null,
                     'redeemed_at' => null,
                 ]);

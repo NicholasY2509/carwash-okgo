@@ -55,6 +55,20 @@ class SendWhatsAppReceiptJob implements ShouldQueue
             $transactionDate = $this->transaction->transaction_date ?? now()->toDateTimeString();
 
             $pdfView = 'pdf.receipt';
+            
+            $remainingVouchers = null;
+            if ($paymentMethod === 'Voucher' && $customer) {
+                $remainingVouchers = \App\Models\Voucher::whereHas('purchasedPacket', function($q) use ($customer) {
+                    $q->where('customer_id', $customer->id)
+                      ->where(function ($subQ) {
+                          $subQ->whereNull('expired_at')->orWhere('expired_at', '>=', now()->startOfDay());
+                      });
+                })->where('status', 'Sold')
+                ->where(function ($q) {
+                    $q->whereNull('expired_at')->orWhere('expired_at', '>=', now()->startOfDay());
+                })->count();
+            }
+
             $pdfData = [
                 'transaction_id' => $this->transaction->id,
                 'transaction_date' => $transactionDate,
@@ -66,6 +80,7 @@ class SendWhatsAppReceiptJob implements ShouldQueue
                 'product_name' => $productName,
                 'payment_method' => $paymentMethod,
                 'voucher_serial_number' => $this->transaction->voucher?->serial_number,
+                'remaining_vouchers' => $remainingVouchers,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $this->transaction->paid_amount,
                 'change_amount' => $this->transaction->change_amount,
