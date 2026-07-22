@@ -33,7 +33,7 @@ class SendWhatsAppReceiptJob implements ShouldQueue
     {
         try {
             // Load relationships if not loaded
-            $this->transaction->load(['customer', 'car', 'serviceRecords.product', 'staff']);
+            $this->transaction->load(['customer', 'car', 'serviceRecords.product', 'staff', 'voucher']);
 
             $customer = $this->transaction->customer;
             $car = $this->transaction->car;
@@ -65,6 +65,7 @@ class SendWhatsAppReceiptJob implements ShouldQueue
                 'car_color' => $carColor,
                 'product_name' => $productName,
                 'payment_method' => $paymentMethod,
+                'voucher_serial_number' => $this->transaction->voucher?->serial_number,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $this->transaction->paid_amount,
                 'change_amount' => $this->transaction->change_amount,

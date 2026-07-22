@@ -533,9 +533,18 @@ class CarWashController extends Controller
     {
         DB::beginTransaction();
         try {
-            $transaction = SalesTransaction::with('serviceRecords')->findOrFail($id);
+            $transaction = SalesTransaction::with(['serviceRecords', 'voucher'])->findOrFail($id);
             $transaction->update(['status' => 'cancelled']);
             $transaction->serviceRecords()->update(['status' => 'cancelled']);
+            
+            if ($transaction->voucher) {
+                $transaction->voucher->update([
+                    'status' => 'Aktif',
+                    'sales_transaction_id' => null,
+                    'redeemed_at' => null,
+                ]);
+            }
+
             DB::commit();
             return back()->with('success', 'Transaksi berhasil dibatalkan.');
         } catch (Throwable $th) {

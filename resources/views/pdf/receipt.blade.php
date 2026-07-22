@@ -232,6 +232,13 @@
             <div class="total-value" style="font-family: 'Courier New', Courier, monospace;">{{ $payment_method }}</div>
         </div>
 
+        @if($payment_method === 'Voucher' && !empty($voucher_serial_number))
+        <div class="total-row">
+            <div class="total-label">Serial Voucher</div>
+            <div class="total-value" style="font-family: 'Courier New', Courier, monospace;">{{ $voucher_serial_number }}</div>
+        </div>
+        @endif
+
         <div class="total-row">
             <div class="total-label grand-total" style="font-family: 'Courier New', Courier, monospace;">Grand Total</div>
             <div class="total-value grand-total" style="font-family: 'Courier New', Courier, monospace;">
