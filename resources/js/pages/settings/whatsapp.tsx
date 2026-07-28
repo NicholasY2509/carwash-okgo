@@ -17,7 +17,7 @@ import {
 
 interface Props {
     hasToken: boolean;
-    wuzapiUrl: string;
+    evolutionUrl: string;
     csrfToken: string;
 }
 
@@ -28,7 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function WhatsAppSettings({ hasToken, wuzapiUrl, csrfToken }: Props) {
+export default function WhatsAppSettings({ hasToken, evolutionUrl, csrfToken }: Props) {
     const [loading, setLoading] = useState(true);
     const [connected, setConnected] = useState(false);
     const [loggedIn, setLoggedIn] = useState(false);
@@ -122,7 +122,7 @@ export default function WhatsAppSettings({ hasToken, wuzapiUrl, csrfToken }: Pro
         setQrcode(null);
 
         try {
-            // Step A: Silently logout of any old stale connections & clear WuzAPI cache
+            // Step A: Silently logout of any old stale connections
             await fetch('/settings/whatsapp/logout', {
                 method: 'POST',
                 headers: {
@@ -150,7 +150,7 @@ export default function WhatsAppSettings({ hasToken, wuzapiUrl, csrfToken }: Pro
             // Step C: Set status to loading QR and fetch QR Code
             setQrcode(''); // Enter QR loading state
 
-            // Give WuzAPI a brief second to handshake before fetching QR code
+            // Give Evolution API a brief second to handshake before fetching QR code
             setTimeout(async () => {
                 await handleFetchQR();
                 setActionLoading(false);
@@ -239,12 +239,13 @@ export default function WhatsAppSettings({ hasToken, wuzapiUrl, csrfToken }: Pro
                     <div className="rounded-xl border border-yellow-200 bg-yellow-50/50 p-6 text-slate-800 dark:border-yellow-900/30 dark:bg-yellow-950/10">
                         <h3 className="text-base font-bold text-yellow-800 dark:text-yellow-500">Konfigurasi .env Diperlukan</h3>
                         <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                            Token WhatsApp (`WUZAPI_TOKEN`) belum dikonfigurasi di file `.env` Laravel Anda.
+                            Token API (`EVOLUTION_API_KEY`) belum dikonfigurasi di file `.env` Laravel Anda.
                         </p>
                         <p className="mt-4 text-xs font-mono text-slate-500">
-                            Tambahkan kunci ini di .env Droplet Anda:<br />
-                            WUZAPI_BASE_URL=https://wa.okgo.co.id<br />
-                            WUZAPI_TOKEN=token_user_anda
+                            Tambahkan kunci ini di .env Anda:<br />
+                            EVOLUTION_API_BASE_URL=https://wa.okgo.co.id<br />
+                            EVOLUTION_API_KEY=token_global_anda<br />
+                            EVOLUTION_API_INSTANCE_NAME=okgo-carwash-instance
                         </p>
                     </div>
                 ) : (

@@ -11,11 +11,13 @@ class WhatsAppSettingsController extends Controller
 {
     private string $baseUrl;
     private ?string $token;
+    private string $instanceName;
 
     public function __construct()
     {
-        $this->baseUrl = env('WUZAPI_BASE_URL', 'https://wa.okgo.co.id');
-        $this->token = env('WUZAPI_TOKEN');
+        $this->baseUrl = env('EVOLUTION_API_BASE_URL', 'https://wa-evolution.okgo.co.id');
+        $this->token = env('EVOLUTION_API_KEY');
+        $this->instanceName = env('EVOLUTION_API_INSTANCE_NAME', 'okgo-carwash-instance');
     }
 
     /**
@@ -25,20 +27,20 @@ class WhatsAppSettingsController extends Controller
     {
         return Inertia::render('settings/whatsapp', [
             'hasToken' => !empty($this->token),
-            'wuzapiUrl' => $this->baseUrl,
+            'evolutionUrl' => $this->baseUrl,
             'csrfToken' => csrf_token(),
         ]);
     }
 
     /**
-     * Fetch current connection status from WuzAPI.
+     * Fetch current connection status from Evolution API.
      */
     public function status()
     {
         if (!$this->token) {
             return response()->json([
                 'success' => false,
-                'message' => 'No WuzAPI Token configured in .env',
+                'message' => 'No Evolution API Key configured in .env',
                 'connected' => false,
                 'loggedIn' => false,
             ]);
@@ -46,26 +48,53 @@ class WhatsAppSettingsController extends Controller
 
         try {
             $response = Http::withHeaders([
-                'token' => $this->token,
+                'apikey' => $this->token,
                 'Accept' => 'application/json',
-            ])->get("{$this->baseUrl}/session/status");
+            ])->timeout(15)->get("{$this->baseUrl}/instance/connectionState/{$this->instanceName}");
 
             if ($response->successful()) {
                 $resData = $response->json();
-                $data = $resData['data'] ?? [];
+                
+                $state = $resData['instance']['state'] ?? 'close';
+                $jid = null;
+
+                if ($state === 'open') {
+                    // Fetch the instance to get the connected JID (phone number)
+                    $instanceCheck = Http::withHeaders([
+                        'apikey' => $this->token,
+                        'Accept' => 'application/json',
+                    ])->timeout(10)->get("{$this->baseUrl}/instance/fetchInstances?instanceName={$this->instanceName}");
+                    
+                    if ($instanceCheck->successful()) {
+                        $instances = $instanceCheck->json();
+                        if (is_array($instances) && count($instances) > 0) {
+                            $jid = $instances[0]['ownerJid'] ?? null;
+                        }
+                    }
+                }
                 
                 return response()->json([
                     'success' => true,
-                    'connected' => $data['Connected'] ?? $data['connected'] ?? false,
-                    'loggedIn' => $data['LoggedIn'] ?? $data['loggedIn'] ?? false,
-                    'jid' => $data['jid'] ?? null,
-                    'qrcode' => $data['qrcode'] ?? $data['QRCode'] ?? null,
+                    'connected' => $state === 'open',
+                    'loggedIn' => $state === 'open',
+                    'state' => $state,
+                    'jid' => $jid,
+                ]);
+            }
+
+            // If 404, it means instance doesn't exist yet, we treat as not connected.
+            if ($response->status() === 404) {
+                return response()->json([
+                    'success' => true,
+                    'connected' => false,
+                    'loggedIn' => false,
+                    'state' => 'not_created',
                 ]);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to reach WuzAPI status API: ' . $response->body(),
+                'message' => 'Failed to reach Evolution API status API: ' . $response->body(),
                 'connected' => false,
                 'loggedIn' => false,
             ], 400);
@@ -73,7 +102,7 @@ class WhatsAppSettingsController extends Controller
             Log::error('WhatsAppSettingsController status error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Exception contacting WuzAPI: ' . $e->getMessage(),
+                'message' => 'Exception contacting Evolution API: ' . $e->getMessage(),
                 'connected' => false,
                 'loggedIn' => false,
             ], 500);
@@ -81,37 +110,46 @@ class WhatsAppSettingsController extends Controller
     }
 
     /**
-     * Initialize WhatsApp session connection.
+     * Initialize WhatsApp session connection / Create instance.
      */
     public function initialize()
     {
         if (!$this->token) {
             return response()->json([
                 'success' => false,
-                'message' => 'No WuzAPI Token configured.',
+                'message' => 'No Evolution API Key configured.',
             ], 400);
         }
 
         try {
-            $response = Http::withHeaders([
-                'token' => $this->token,
-                'Content-Type' => 'application/json',
-            ])->post("{$this->baseUrl}/session/connect", [
-                'Subscribe' => [],
-                'Immediate' => false,
-            ]);
+            // First check if instance exists
+            $check = Http::withHeaders([
+                'apikey' => $this->token,
+            ])->timeout(15)->get("{$this->baseUrl}/instance/connectionState/{$this->instanceName}");
 
-            if ($response->successful() || str_contains($response->body(), 'already connected')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Session connection initialized successfully.',
+            if ($check->status() === 404) {
+                // Create instance
+                $create = Http::withHeaders([
+                    'apikey' => $this->token,
+                    'Content-Type' => 'application/json',
+                ])->timeout(20)->post("{$this->baseUrl}/instance/create", [
+                    'instanceName' => $this->instanceName,
+                    'qrcode' => true,
+                    'integration' => 'WHATSAPP-BAILEYS',
                 ]);
+
+                if (!$create->successful()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to create instance: ' . $create->body(),
+                    ], 400);
+                }
             }
 
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to connect: ' . $response->body(),
-            ], 400);
+                'success' => true,
+                'message' => 'Session connection initialized successfully.',
+            ]);
         } catch (\Throwable $e) {
             Log::error('WhatsAppSettingsController initialize error: ' . $e->getMessage());
             return response()->json([
@@ -129,29 +167,20 @@ class WhatsAppSettingsController extends Controller
         if (!$this->token) {
             return response()->json([
                 'success' => false,
-                'message' => 'No WuzAPI Token configured.',
+                'message' => 'No Evolution API Key configured.',
             ], 400);
         }
 
         try {
             $qrResponse = Http::withHeaders([
-                'token' => $this->token,
+                'apikey' => $this->token,
                 'Accept' => 'application/json',
-            ])->get("{$this->baseUrl}/session/qr");
+            ])->timeout(15)->get("{$this->baseUrl}/instance/connect/{$this->instanceName}");
 
             $qrString = '';
             if ($qrResponse->successful()) {
                 $qrData = $qrResponse->json();
-                $qrString = $qrData['data']['QRCode'] ?? $qrData['data']['qrcode'] ?? '';
-            }
-
-            // Fallback to status endpoint if QR is empty
-            if (empty($qrString)) {
-                $statusResponse = Http::withHeaders(['token' => $this->token])->get("{$this->baseUrl}/session/status");
-                if ($statusResponse->successful()) {
-                    $statusData = $statusResponse->json()['data'] ?? [];
-                    $qrString = $statusData['qrcode'] ?? $statusData['QRCode'] ?? '';
-                }
+                $qrString = $qrData['base64'] ?? '';
             }
 
             return response()->json([
@@ -175,27 +204,20 @@ class WhatsAppSettingsController extends Controller
         if (!$this->token) {
             return response()->json([
                 'success' => false,
-                'message' => 'No WuzAPI Token configured.',
+                'message' => 'No Evolution API Key configured.',
             ], 400);
         }
 
         try {
-            // 1. Send logout command to clean up Whatsmeow memory client
+            // Send logout command
             Http::withHeaders([
-                'token' => $this->token,
+                'apikey' => $this->token,
                 'Content-Type' => 'application/json',
-            ])->post("{$this->baseUrl}/session/logout");
-
-            // 2. Send disconnect command as a fallback
-            Http::withHeaders(['token' => $this->token])->post("{$this->baseUrl}/session/disconnect");
-
-            // 3. FORCE WIPE STATIC CACHE: Purges the stale user cache on WuzAPI,
-            // forcing it to read the database fresh on the next call!
-            Http::withHeaders(['token' => $this->token])->delete("{$this->baseUrl}/session/s3/config");
+            ])->timeout(15)->delete("{$this->baseUrl}/instance/logout/{$this->instanceName}");
 
             return response()->json([
                 'success' => true,
-                'message' => 'Disconnected and cache cleared successfully.',
+                'message' => 'Disconnected successfully.',
             ]);
         } catch (\Throwable $e) {
             Log::error('WhatsAppSettingsController logout error: ' . $e->getMessage());

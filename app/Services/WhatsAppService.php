@@ -16,11 +16,12 @@ class WhatsAppService
      */
     public static function sendMessage(string $phone, string $message): bool
     {
-        $baseUrl = env('WUZAPI_BASE_URL', 'https://wa.okgo.co.id');
-        $token = env('WUZAPI_TOKEN');
+        $baseUrl = env('EVOLUTION_API_BASE_URL', 'https://wa-evolution.okgo.co.id');
+        $token = env('EVOLUTION_API_KEY');
+        $instance = env('EVOLUTION_API_INSTANCE_NAME', 'okgo-carwash-instance');
 
         if (!$token) {
-            Log::warning('WhatsAppService: No WuzAPI token configured. Skipping message dispatch.');
+            Log::warning('WhatsAppService: No Evolution API token configured. Skipping message dispatch.');
             return false;
         }
 
@@ -32,11 +33,11 @@ class WhatsAppService
 
         try {
             $response = Http::withHeaders([
-                'token' => $token,
+                'apikey' => $token,
                 'Content-Type' => 'application/json',
-            ])->post("{$baseUrl}/chat/send/text", [
-                'Phone' => $cleanPhone,
-                'Body' => $message,
+            ])->timeout(20)->post("{$baseUrl}/message/sendText/{$instance}", [
+                'number' => $cleanPhone,
+                'text' => $message,
             ]);
 
             if ($response->successful()) {
@@ -70,11 +71,12 @@ class WhatsAppService
      */
     public static function sendPDF(string $phone, string $pdfContentRaw, string $fileName, ?string $caption = null): bool
     {
-        $baseUrl = env('WUZAPI_BASE_URL', 'https://wa.okgo.co.id');
-        $token = env('WUZAPI_TOKEN');
+        $baseUrl = env('EVOLUTION_API_BASE_URL', 'https://wa-evolution.okgo.co.id');
+        $token = env('EVOLUTION_API_KEY');
+        $instance = env('EVOLUTION_API_INSTANCE_NAME', 'okgo-carwash-instance');
 
         if (!$token) {
-            Log::warning('WhatsAppService: No WuzAPI token configured. Skipping PDF dispatch.');
+            Log::warning('WhatsAppService: No Evolution API token configured. Skipping PDF dispatch.');
             return false;
         }
 
@@ -90,14 +92,15 @@ class WhatsAppService
 
         try {
             $response = Http::withHeaders([
-                'token' => $token,
+                'apikey' => $token,
                 'Content-Type' => 'application/json',
-            ])->post("{$baseUrl}/chat/send/document", [
-                'Phone' => $cleanPhone,
-                'Document' => $dataUrl,
-                'FileName' => $fileName,
-                'MimeType' => 'application/pdf',
-                'Caption' => $caption ?? '',
+            ])->timeout(60)->post("{$baseUrl}/message/sendMedia/{$instance}", [
+                'number' => $cleanPhone,
+                'mediatype' => 'document',
+                'mimetype' => 'application/pdf',
+                'caption' => $caption ?? '',
+                'media' => $base64Pdf,
+                'fileName' => $fileName,
             ]);
 
             if ($response->successful()) {
