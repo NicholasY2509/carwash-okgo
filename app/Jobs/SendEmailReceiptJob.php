@@ -123,6 +123,7 @@ class SendEmailReceiptJob
             Log::error("SendEmailReceiptJob failed: " . $th->getMessage(), [
                 'exception' => $th,
             ]);
+            throw $th;
         }
     }
 }

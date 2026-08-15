@@ -82,8 +82,11 @@ class SalesTransactionController extends Controller
             return back()->with('error', 'Tidak dapat mengirim struk untuk transaksi yang dibatalkan.');
         }
 
-        \App\Jobs\SendEmailReceiptJob::dispatchSync($transaction, $request->email);
-
-        return back()->with('success', 'Struk Email sedang dikirim.');
+        try {
+            \App\Jobs\SendEmailReceiptJob::dispatchSync($transaction, $request->email);
+            return back()->with('success', 'Struk Email berhasil dikirim.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
     }
 }
