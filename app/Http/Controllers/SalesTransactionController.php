@@ -83,9 +83,27 @@ class SalesTransactionController extends Controller
         }
 
         try {
+            // Force SMTP configuration to bypass any cache/env issues on production
+            config([
+                'mail.default' => 'smtp',
+                'mail.mailers.smtp.transport' => 'smtp',
+                'mail.mailers.smtp.host' => 'smtp.gmail.com',
+                'mail.mailers.smtp.port' => 587,
+                'mail.mailers.smtp.encryption' => 'tls',
+                'mail.mailers.smtp.username' => 'Kuroautowash@gmail.com',
+                'mail.mailers.smtp.password' => 'jswfxuzgohktzsex',
+                'mail.from.address' => 'kuroautwash@gmail.com',
+                'mail.from.name' => 'Kuro Auto Care',
+            ]);
+
+            \Illuminate\Support\Facades\Log::info("Sending email to: " . $request->email . " using mailer: " . config('mail.default'));
+
             \App\Jobs\SendEmailReceiptJob::dispatchSync($transaction, $request->email);
+            
+            \Illuminate\Support\Facades\Log::info("Email sent successfully to: " . $request->email);
             return back()->with('success', 'Struk Email berhasil dikirim.');
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Email failed inside try-catch: " . $e->getMessage());
             return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
         }
     }
