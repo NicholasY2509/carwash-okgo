@@ -69,4 +69,21 @@ class SalesTransactionController extends Controller
 
         return back()->with('success', 'Struk WhatsApp sedang dikirim ulang.');
     }
+
+    public function sendEmailReceipt(Request $request, string $id)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $transaction = SalesTransaction::findOrFail($id);
+        
+        if ($transaction->status === 'cancelled') {
+            return back()->with('error', 'Tidak dapat mengirim struk untuk transaksi yang dibatalkan.');
+        }
+
+        \App\Jobs\SendEmailReceiptJob::dispatchSync($transaction, $request->email);
+
+        return back()->with('success', 'Struk Email sedang dikirim.');
+    }
 }

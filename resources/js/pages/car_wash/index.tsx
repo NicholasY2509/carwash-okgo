@@ -22,10 +22,11 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, X, XCircle, Info, Send } from "lucide-react";
+import { Search, X, XCircle, Info, Send, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { usePermission } from "@/hooks/use-permission";
 import { Modal, ModalHeader } from "@/components/ui/modal";
@@ -139,6 +140,80 @@ function ResendReceiptButton({
     );
 }
 
+function SendEmailReceiptDialog({
+    transactionId,
+}: {
+    transactionId: string | number;
+}) {
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState("");
+
+    const handleSend = () => {
+        if (!email) {
+            toast.error("Email harus diisi");
+            return;
+        }
+
+        setLoading(true);
+        router.post(
+            route("sales-transactions.send-email-receipt", transactionId),
+            { email },
+            {
+                onSuccess: () => {
+                    setOpen(false);
+                    setEmail("");
+                    toast.success("Struk Email sedang dikirim");
+                },
+                onError: () => toast.error("Gagal mengirim struk email"),
+                onFinish: () => setLoading(false),
+            },
+        );
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                    title="Kirim Struk via Email"
+                >
+                    <Mail className="h-4 w-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Kirim Struk Email</DialogTitle>
+                    <DialogDescription>
+                        Masukkan alamat email untuk mengirim struk transaksi ini.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex flex-col gap-2">
+                        <Input
+                            id="email"
+                            placeholder="nama@email.com"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                        Batal
+                    </Button>
+                    <Button onClick={handleSend} disabled={loading}>
+                        {loading ? "Mengirim..." : "Kirim Email"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function CancelConfirmDialog({
     record,
     onConfirm,
@@ -167,13 +242,13 @@ function CancelConfirmDialog({
 
     const formattedDate = record.service_date
         ? new Intl.DateTimeFormat("id-ID", {
-              day: "numeric",
-              month: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Asia/Jakarta",
-          }).format(new Date(record.service_date))
+            day: "numeric",
+            month: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Jakarta",
+        }).format(new Date(record.service_date))
         : "-";
 
     return (
@@ -399,6 +474,9 @@ export default function CarWashIndex() {
                         {record.status !== "cancelled" && (
                             <ResendReceiptButton transactionId={record.id} />
                         )}
+                        {record.status !== "cancelled" && (
+                            <SendEmailReceiptDialog transactionId={record.id} />
+                        )}
                         {record.status !== "cancelled" && hasPermission("cancel transactions") && (
                             <CancelConfirmDialog record={record} onConfirm={() => { }} />
                         )}
@@ -556,7 +634,7 @@ export default function CarWashIndex() {
                                 </span>
                                 <div>
                                     {selectedWashDetail.status ===
-                                    "cancelled" ? (
+                                        "cancelled" ? (
                                         <Badge variant="destructive">
                                             Dibatalkan
                                         </Badge>
@@ -577,17 +655,17 @@ export default function CarWashIndex() {
                                 <span className="font-semibold text-foreground">
                                     {selectedWashDetail.service_date
                                         ? new Intl.DateTimeFormat("id-ID", {
-                                              day: "numeric",
-                                              month: "long",
-                                              year: "numeric",
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                              timeZone: "Asia/Jakarta",
-                                          }).format(
-                                              new Date(
-                                                  selectedWashDetail.service_date,
-                                              ),
-                                          )
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            timeZone: "Asia/Jakarta",
+                                        }).format(
+                                            new Date(
+                                                selectedWashDetail.service_date,
+                                            ),
+                                        )
                                         : "-"}
                                 </span>
                             </div>
@@ -652,8 +730,8 @@ export default function CarWashIndex() {
                                     </TableHeader>
                                     <TableBody>
                                         {selectedWashDetail.service_records &&
-                                        selectedWashDetail.service_records
-                                            .length > 0 ? (
+                                            selectedWashDetail.service_records
+                                                .length > 0 ? (
                                             selectedWashDetail.service_records.map(
                                                 (sr) => (
                                                     <TableRow key={sr.id}>
@@ -673,11 +751,11 @@ export default function CarWashIndex() {
                                                         <TableCell className="text-right font-semibold text-foreground">
                                                             {sr.product
                                                                 ? formatRupiah(
-                                                                      sr.price ??
-                                                                          sr
-                                                                              .product
-                                                                              .price,
-                                                                  )
+                                                                    sr.price ??
+                                                                    sr
+                                                                        .product
+                                                                        .price,
+                                                                )
                                                                 : "-"}
                                                         </TableCell>
                                                     </TableRow>
@@ -704,7 +782,7 @@ export default function CarWashIndex() {
                                 Barang / Item Pelengkap
                             </h3>
                             {selectedWashDetail.items &&
-                            selectedWashDetail.items.length > 0 ? (
+                                selectedWashDetail.items.length > 0 ? (
                                 <div className="border rounded-lg overflow-hidden bg-card">
                                     <Table className="w-full text-sm text-left">
                                         <TableHeader className="bg-muted/40">
@@ -752,15 +830,15 @@ export default function CarWashIndex() {
                                                                 {isIncluded
                                                                     ? "Rp 0"
                                                                     : formatRupiah(
-                                                                          item.price,
-                                                                      )}
+                                                                        item.price,
+                                                                    )}
                                                             </TableCell>
                                                             <TableCell className="text-right font-bold text-foreground">
                                                                 {isIncluded
                                                                     ? "Rp 0"
                                                                     : formatRupiah(
-                                                                          item.subtotal,
-                                                                      )}
+                                                                        item.subtotal,
+                                                                    )}
                                                             </TableCell>
                                                         </TableRow>
                                                     );
@@ -790,7 +868,7 @@ export default function CarWashIndex() {
                             </div>
                             {selectedWashDetail.paid_amount !== null &&
                                 selectedWashDetail.paid_amount !==
-                                    undefined && (
+                                undefined && (
                                     <div className="flex justify-between w-full max-w-xs text-sm">
                                         <span className="text-muted-foreground">
                                             Nominal Bayar:

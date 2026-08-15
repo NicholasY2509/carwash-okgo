@@ -26,6 +26,7 @@ import {
     Edit,
     InfoIcon,
     Send,
+    Mail,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -115,6 +116,80 @@ function ResendReceiptButton({
         >
             <Send className="h-4 w-4" />
         </Button>
+    );
+}
+
+function SendEmailReceiptDialog({
+    transactionId,
+}: {
+    transactionId: string | number;
+}) {
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState("");
+
+    const handleSend = () => {
+        if (!email) {
+            toast.error("Email harus diisi");
+            return;
+        }
+
+        setLoading(true);
+        router.post(
+            route("sales-transactions.send-email-receipt", transactionId),
+            { email },
+            {
+                onSuccess: () => {
+                    setOpen(false);
+                    setEmail("");
+                    toast.success("Struk Email sedang dikirim");
+                },
+                onError: () => toast.error("Gagal mengirim struk email"),
+                onFinish: () => setLoading(false),
+            },
+        );
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                    title="Kirim Struk via Email"
+                >
+                    <Mail className="h-4 w-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Kirim Struk Email</DialogTitle>
+                    <DialogDescription>
+                        Masukkan alamat email untuk mengirim struk transaksi ini.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex flex-col gap-2">
+                        <Input
+                            id="email"
+                            placeholder="nama@email.com"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                        Batal
+                    </Button>
+                    <Button onClick={handleSend} disabled={loading}>
+                        {loading ? "Mengirim..." : "Kirim Email"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -401,7 +476,7 @@ function VouchersDialog({ transaction }: { transaction: SalesTransactionRow }) {
                             </div>
                             <div className="p-4 bg-white">
                                 {packet.vouchers &&
-                                packet.vouchers.length > 0 ? (
+                                    packet.vouchers.length > 0 ? (
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         {packet.vouchers.map((v) => {
                                             const isUsed =
@@ -465,10 +540,10 @@ function VouchersDialog({ transaction }: { transaction: SalesTransactionRow }) {
                     ))}
                     {(!transaction.purchased_packets ||
                         transaction.purchased_packets.length === 0) && (
-                        <div className="text-center p-6 text-muted-foreground border rounded-xl border-dashed">
-                            Tidak ada paket yang ditemukan.
-                        </div>
-                    )}
+                            <div className="text-center p-6 text-muted-foreground border rounded-xl border-dashed">
+                                Tidak ada paket yang ditemukan.
+                            </div>
+                        )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -575,9 +650,9 @@ export default function PurchasedPacketIndex() {
             header: "Nama Paket",
             cell: ({ row }) =>
                 Array.isArray(row.original.purchased_packets) &&
-                row.original.purchased_packets.length > 0
+                    row.original.purchased_packets.length > 0
                     ? row.original.purchased_packets[0].voucher_packet?.name ||
-                      ""
+                    ""
                     : "",
         },
         {
@@ -626,6 +701,11 @@ export default function PurchasedPacketIndex() {
                         <VouchersDialog transaction={transaction} />
                         {transaction.status !== "cancelled" && (
                             <ResendReceiptButton
+                                transactionId={transaction.id}
+                            />
+                        )}
+                        {transaction.status !== "cancelled" && (
+                            <SendEmailReceiptDialog
                                 transactionId={transaction.id}
                             />
                         )}

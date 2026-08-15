@@ -68,6 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('sales-transactions', SalesTransactionController::class)->middleware('permission:sales transaction');
     Route::post('sales-transactions/{id}/resend-receipt', [SalesTransactionController::class, 'resendReceipt'])->name('sales-transactions.resend-receipt');
+    Route::post('sales-transactions/{id}/send-email-receipt', [SalesTransactionController::class, 'sendEmailReceipt'])->name('sales-transactions.send-email-receipt');
 
     // Customers
     Route::resource('customers', CustomerController::class)->middleware('permission:customer');
