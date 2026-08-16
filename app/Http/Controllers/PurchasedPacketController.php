@@ -102,7 +102,7 @@ class PurchasedPacketController extends Controller
 
     public function create()
     {
-        $voucherPackets = VoucherPacket::select(['id', 'name', 'price', 'quantity', 'voucher_type_id', 'assign_on_sale', 'until_year_end', 'valid_period_months'])
+        $voucherPackets = VoucherPacket::select(['id', 'name', 'price', 'quantity', 'voucher_type_id', 'assign_on_sale', 'autogenerate_vouchers', 'has_unlimited_issuance', 'until_year_end', 'valid_period_months', 'description'])
             ->with(['voucherType:id,name,only_one_car'])
             ->orderBy('name')
             ->limit(30)
