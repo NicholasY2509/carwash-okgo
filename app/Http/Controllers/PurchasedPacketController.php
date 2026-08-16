@@ -172,7 +172,7 @@ class PurchasedPacketController extends Controller
                         ? Carbon::parse($voucher_packet->expired_date)->endOfDay()->toDateTimeString()
                         : ($voucher_packet->until_year_end
                             ? Carbon::now('Asia/Jakarta')->endOfYear()->toDateTimeString()
-                            : Carbon::now('Asia/Jakarta')->addMonths($voucher_packet->valid_period_months)->toDateTimeString()),
+                            : Carbon::now('Asia/Jakarta')->addMonths((int) $voucher_packet->valid_period_months)->toDateTimeString()),
                 ]);
                 $purchasedPackets[] = $purchased_packet;
                 
