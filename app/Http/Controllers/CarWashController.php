@@ -46,6 +46,12 @@ class CarWashController extends Controller
             ->when($request->filled('staff_id'), function ($q) use ($request) {
                 $q->where('staff_id', $request->staff_id);
             })
+            ->when($request->filled('start_date'), function ($q) use ($request) {
+                $q->whereDate('transaction_date', '>=', $request->start_date);
+            })
+            ->when($request->filled('end_date'), function ($q) use ($request) {
+                $q->whereDate('transaction_date', '<=', $request->end_date);
+            })
             ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
                 if ($statusFilter === 'active') {
                     $q->where('status', '!=', 'cancelled');
@@ -148,6 +154,8 @@ class CarWashController extends Controller
                 'staff_id' => $request->input('staff_id'),
                 'search' => $search,
                 'status' => $statusFilter,
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
             ]
         ]);
     }

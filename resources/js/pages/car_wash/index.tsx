@@ -349,6 +349,22 @@ export default function CarWashIndex() {
     const [staffId, setStaffId] = useState(filters.staff_id ? filters.staff_id.toString() : "all");
     const [status, setStatus] = useState(filters.status ? filters.status.toString() : "active");
 
+    const [startDate, setStartDate] = useState(filters.start_date || "");
+    const [endDate, setEndDate] = useState(filters.end_date || "");
+
+    const handleQuickFilter = (type: "today" | "this_month") => {
+        const now = new Date();
+        let startStr = now.toISOString().split("T")[0];
+        let endStr = startStr;
+
+        if (type === "this_month") {
+            startStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+        }
+
+        setStartDate(startStr);
+        setEndDate(endStr);
+    };
+
     const [selectedWashDetail, setSelectedWashDetail] =
         useState<ServiceRecords | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -489,7 +505,7 @@ export default function CarWashIndex() {
     const handlePageChange = (page: number) => {
         router.get(
             route("car-washes.index"),
-            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
+            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
             { preserveState: true },
         );
     };
@@ -498,7 +514,7 @@ export default function CarWashIndex() {
         setPerPage(newPerPage);
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
+            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
             { preserveState: true },
         );
     };
@@ -507,10 +523,10 @@ export default function CarWashIndex() {
         if (!isMounted.current) return;
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status },
+            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
             { preserveState: true },
         );
-    }, [debouncedSearchQuery, staffId, status]);
+    }, [debouncedSearchQuery, staffId, status, startDate, endDate]);
 
     const clearSearch = () => {
         setSearchQuery("");
@@ -528,7 +544,40 @@ export default function CarWashIndex() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <div className="flex justify-end flex-row items-center gap-2">
+                    <div className="flex justify-end flex-row flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleQuickFilter("today")}
+                                className="h-8 text-xs"
+                            >
+                                Hari Ini
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleQuickFilter("this_month")}
+                                className="h-8 text-xs"
+                            >
+                                Bulan Ini
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-2 mr-2">
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-[130px] h-8 text-xs"
+                            />
+                            <span className="text-xs text-muted-foreground">s/d</span>
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="w-[130px] h-8 text-xs"
+                            />
+                        </div>
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">
                                 Baris per halaman:
