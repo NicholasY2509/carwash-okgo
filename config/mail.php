@@ -39,7 +39,7 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => 'tls',
+            'scheme' => 'smtps', // <--- CHANGE THIS TO smtps (with an 's' at the end)
             'host' => 'mail.okgo.co.id',
             'port' => 465,
             'username' => 'kuroautowash@carwash.okgo.co.id',
