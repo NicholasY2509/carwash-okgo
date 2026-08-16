@@ -38,6 +38,10 @@ return [
     'mailers' => [
 
         'smtp' => [
+            'from' => [
+                'address' => 'kuroautowash@carwash.okgo.co.id',
+                'name' => 'Kuro Auto Wash',
+            ],
             'transport' => 'smtp',
             'scheme' => 'smtps', // <--- CHANGE THIS TO smtps (with an 's' at the end)
             'host' => 'mail.okgo.co.id',
