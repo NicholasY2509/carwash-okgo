@@ -21,6 +21,8 @@ class CarWashRevenueReportController extends Controller
             $reportType = 'daily';
             $startDate = Carbon::now('Asia/Jakarta')->format('Y-m-d');
             $endDate = $startDate;
+            $startTime = null;
+            $endTime = null;
             $staffId = optional($user->staff)->id ?? -1;
         } else {
             $reportType = $request->input('report_type', 'daily');

@@ -379,128 +379,127 @@ export default function CarWashRevenueReport() {
                     />
                 </div>
 
-                {/* Filters Pane (Horizontal) */}
+                {/* Filters Pane */}
                 {!isKasir && (
-                <div className="flex flex-col md:flex-row items-center gap-4 bg-card border rounded-xl p-4 shadow-xs w-full">
-                    {/* Tipe Selector */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            Tipe:
-                        </span>
-                        <div className="flex rounded-lg border overflow-hidden">
-                            <button
-                                onClick={() => setReportType("daily")}
-                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${reportType === "daily" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                            >
-                                Harian
-                            </button>
-                            <button
-                                onClick={() => setReportType("monthly")}
-                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${reportType === "monthly" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                            >
-                                Bulanan
-                            </button>
+                    <div className="bg-card border rounded-xl p-4 shadow-xs w-full flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <h3 className="text-sm font-semibold text-foreground">
+                                Filter Laporan
+                            </h3>
+                            {/* Quick Filters */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleQuickFilter("today")}
+                                    className="h-8 text-xs"
+                                >
+                                    Hari Ini
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleQuickFilter("this_month")}
+                                    className="h-8 text-xs"
+                                >
+                                    Bulan Ini
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleQuickFilter("this_year")}
+                                    className="h-8 text-xs"
+                                >
+                                    Tahun Ini
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                            {/* Tipe Selector */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-xs text-muted-foreground font-medium">Tipe Laporan</span>
+                                <div className="flex rounded-lg border overflow-hidden h-9">
+                                    <button
+                                        onClick={() => setReportType("daily")}
+                                        className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${reportType === "daily" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                                    >
+                                        Harian
+                                    </button>
+                                    <button
+                                        onClick={() => setReportType("monthly")}
+                                        className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${reportType === "monthly" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                                    >
+                                        Bulanan
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Date Inputs */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-xs text-muted-foreground font-medium">Periode Tanggal</span>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-full h-9 text-xs"
+                                    />
+                                    <span className="text-xs text-muted-foreground">-</span>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-full h-9 text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Time Inputs */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-xs text-muted-foreground font-medium">Rentang Waktu</span>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="w-full h-9 text-xs"
+                                    />
+                                    <span className="text-xs text-muted-foreground">-</span>
+                                    <Input
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full h-9 text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Staff Filter */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-xs text-muted-foreground font-medium">Pencuci</span>
+                                <Select value={staffId} onValueChange={setStaffId}>
+                                    <SelectTrigger className="w-full h-9 text-xs">
+                                        <SelectValue placeholder="Semua Kasir" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" className="text-xs">
+                                            Semua Kasir
+                                        </SelectItem>
+                                        {staffList.map((staff) => (
+                                            <SelectItem
+                                                key={staff.id}
+                                                value={staff.id.toString()}
+                                                className="text-xs"
+                                            >
+                                                {staff.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Date Inputs */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            Periode:
-                        </span>
-                        <Input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="w-[140px] h-9 text-xs"
-                        />
-                        <span className="text-xs text-muted-foreground">
-                            s/d
-                        </span>
-                        <Input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="w-[140px] h-9 text-xs"
-                        />
-                    </div>
-
-                    {/* Time Inputs */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            Waktu:
-                        </span>
-                        <Input
-                            type="time"
-                            value={startTime}
-                            onChange={(e) => setStartTime(e.target.value)}
-                            className="w-[90px] h-9 text-xs"
-                        />
-                        <span className="text-xs text-muted-foreground">
-                            s/d
-                        </span>
-                        <Input
-                            type="time"
-                            value={endTime}
-                            onChange={(e) => setEndTime(e.target.value)}
-                            className="w-[90px] h-9 text-xs"
-                        />
-                    </div>
-
-                    {/* Staff Filter */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            Pencuci:
-                        </span>
-                        <Select value={staffId} onValueChange={setStaffId}>
-                            <SelectTrigger className="w-[140px] h-9 text-xs">
-                                <SelectValue placeholder="Semua Kasir" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all" className="text-xs">
-                                    Semua Kasir
-                                </SelectItem>
-                                {staffList.map((staff) => (
-                                    <SelectItem
-                                        key={staff.id}
-                                        value={staff.id.toString()}
-                                        className="text-xs"
-                                    >
-                                        {staff.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Quick Filters */}
-                    <div className="flex items-center gap-2 flex-wrap md:ml-auto">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleQuickFilter("today")}
-                            className="h-8 text-xs"
-                        >
-                            Hari Ini
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleQuickFilter("this_month")}
-                            className="h-8 text-xs"
-                        >
-                            Bulan Ini
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleQuickFilter("this_year")}
-                            className="h-8 text-xs"
-                        >
-                            Tahun Ini
-                        </Button>
-                    </div>
-                </div>
                 )}
 
                 {/* Summary Cards */}
