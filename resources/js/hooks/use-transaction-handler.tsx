@@ -14,6 +14,17 @@ export const useTransactionHandler = ({
         page: any,
         printFunction?: (transaction: any) => void,
     ) => {
+        const errorMsg = (page.props.flash as any)?.error;
+        if (errorMsg) {
+            Swal.fire({
+                icon: "error",
+                title: "Gagal",
+                text: errorMsg,
+                showConfirmButton: true,
+            });
+            return;
+        }
+
         const newTransaction = (page.props.flash as any)?.transaction;
         const midtrans = (page.props.flash as any)?.midtrans;
 
