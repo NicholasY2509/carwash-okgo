@@ -26,6 +26,8 @@ class CarWashRevenueReportController extends Controller
             $reportType = $request->input('report_type', 'daily');
             $startDate = $request->input('start_date', Carbon::now('Asia/Jakarta')->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
+            $startTime = $request->input('start_time');
+            $endTime = $request->input('end_time');
             $staffId = $request->input('staff_id');
         }
 
@@ -37,6 +39,12 @@ class CarWashRevenueReportController extends Controller
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay(),
             ])
+            ->when($startTime, function($query) use ($startTime) {
+                $query->whereTime('transaction_date', '>=', $startTime);
+            })
+            ->when($endTime, function($query) use ($endTime) {
+                $query->whereTime('transaction_date', '<=', $endTime);
+            })
             ->when($staffId, function($query) use ($staffId) {
                 $query->where('staff_id', $staffId);
             });
@@ -67,6 +75,12 @@ class CarWashRevenueReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($startTime, function($query) use ($startTime) {
+                    $query->whereTime('transaction_date', '>=', $startTime);
+                })
+                ->when($endTime, function($query) use ($endTime) {
+                    $query->whereTime('transaction_date', '<=', $endTime);
+                })
                 ->when($staffId, function($query) use ($staffId) {
                     $query->where('staff_id', $staffId);
                 })
@@ -101,6 +115,12 @@ class CarWashRevenueReportController extends Controller
                     Carbon::parse($startDate)->startOfDay(),
                     Carbon::parse($endDate)->endOfDay(),
                 ])
+                ->when($startTime, function($query) use ($startTime) {
+                    $query->whereTime('transaction_date', '>=', $startTime);
+                })
+                ->when($endTime, function($query) use ($endTime) {
+                    $query->whereTime('transaction_date', '<=', $endTime);
+                })
                 ->when($staffId, function($query) use ($staffId) {
                     $query->where('staff_id', $staffId);
                 })
@@ -131,6 +151,8 @@ class CarWashRevenueReportController extends Controller
                 'report_type' => $reportType,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'start_time' => $startTime ?? '',
+                'end_time' => $endTime ?? '',
                 'staff_id' => $staffId,
             ],
             'staffList' => $staffList,

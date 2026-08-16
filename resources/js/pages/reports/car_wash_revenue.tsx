@@ -124,6 +124,8 @@ export default function CarWashRevenueReport() {
         report_type: "daily",
         start_date: "",
         end_date: "",
+        start_time: "",
+        end_time: "",
         staff_id: "",
     };
     const staffList = (props.staffList as Staff[]) || [];
@@ -132,6 +134,8 @@ export default function CarWashRevenueReport() {
     const [reportType, setReportType] = useState(filters.report_type);
     const [startDate, setStartDate] = useState(filters.start_date);
     const [endDate, setEndDate] = useState(filters.end_date);
+    const [startTime, setStartTime] = useState(filters.start_time);
+    const [endTime, setEndTime] = useState(filters.end_time);
     const [staffId, setStaffId] = useState(
         filters.staff_id ? filters.staff_id.toString() : "all",
     );
@@ -154,11 +158,13 @@ export default function CarWashRevenueReport() {
                 report_type: reportType,
                 start_date: startDate,
                 end_date: endDate,
+                start_time: startTime,
+                end_time: endTime,
                 staff_id: staffId === "all" ? "" : staffId,
             },
             { preserveState: true },
         );
-    }, [reportType, startDate, endDate, staffId]);
+    }, [reportType, startDate, endDate, startTime, endTime, staffId]);
 
     const handleQuickFilter = (type: "today" | "this_month" | "this_year") => {
         const now = new Date();
@@ -185,6 +191,8 @@ export default function CarWashRevenueReport() {
                 report_type: reportType,
                 start_date: startDate,
                 end_date: endDate,
+                start_time: startTime,
+                end_time: endTime,
                 staff_id: staffId === "all" ? "" : staffId,
                 page,
             },
@@ -414,6 +422,28 @@ export default function CarWashRevenueReport() {
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             className="w-[140px] h-9 text-xs"
+                        />
+                    </div>
+
+                    {/* Time Inputs */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            Waktu:
+                        </span>
+                        <Input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="w-[90px] h-9 text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                            s/d
+                        </span>
+                        <Input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="w-[90px] h-9 text-xs"
                         />
                     </div>
 

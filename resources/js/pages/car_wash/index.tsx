@@ -341,6 +341,7 @@ function CancelConfirmDialog({
 export default function CarWashIndex() {
     const { hasPermission } = usePermission();
     const { props } = usePage<PageProps<{ service_records: any; staffList: any; filters: any }>>();
+    const isKasir = props.auth?.roles?.includes("Kasir");
     const pagination = props.service_records;
     const staffList = props.staffList || [];
     const filters = props.filters || { staff_id: "", search: "", status: "active" };
@@ -351,6 +352,8 @@ export default function CarWashIndex() {
 
     const [startDate, setStartDate] = useState(filters.start_date || "");
     const [endDate, setEndDate] = useState(filters.end_date || "");
+    const [startTime, setStartTime] = useState(filters.start_time || "");
+    const [endTime, setEndTime] = useState(filters.end_time || "");
 
     const handleQuickFilter = (type: "today" | "this_month") => {
         const now = new Date();
@@ -505,7 +508,7 @@ export default function CarWashIndex() {
     const handlePageChange = (page: number) => {
         router.get(
             route("car-washes.index"),
-            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
+            { page, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime },
             { preserveState: true },
         );
     };
@@ -514,7 +517,7 @@ export default function CarWashIndex() {
         setPerPage(newPerPage);
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
+            { page: 1, per_page: newPerPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime },
             { preserveState: true },
         );
     };
@@ -523,10 +526,10 @@ export default function CarWashIndex() {
         if (!isMounted.current) return;
         router.get(
             route("car-washes.index"),
-            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate },
+            { page: 1, per_page: perPage, search: debouncedSearchQuery, staff_id: staffId === "all" ? "" : staffId, status: status, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime },
             { preserveState: true },
         );
-    }, [debouncedSearchQuery, staffId, status, startDate, endDate]);
+    }, [debouncedSearchQuery, staffId, status, startDate, endDate, startTime, endTime]);
 
     const clearSearch = () => {
         setSearchQuery("");
@@ -545,39 +548,58 @@ export default function CarWashIndex() {
 
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-end flex-row flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleQuickFilter("today")}
-                                className="h-8 text-xs"
-                            >
-                                Hari Ini
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleQuickFilter("this_month")}
-                                className="h-8 text-xs"
-                            >
-                                Bulan Ini
-                            </Button>
-                        </div>
-                        <div className="flex items-center gap-2 mr-2">
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-[130px] h-8 text-xs"
-                            />
-                            <span className="text-xs text-muted-foreground">s/d</span>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-[130px] h-8 text-xs"
-                            />
-                        </div>
+                        {!isKasir && (
+                            <>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleQuickFilter("today")}
+                                        className="h-8 text-xs"
+                                    >
+                                        Hari Ini
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleQuickFilter("this_month")}
+                                        className="h-8 text-xs"
+                                    >
+                                        Bulan Ini
+                                    </Button>
+                                </div>
+                                <div className="flex items-center gap-2 mr-2">
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-[130px] h-8 text-xs"
+                                    />
+                                    <span className="text-xs text-muted-foreground">s/d</span>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-[130px] h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 mr-2">
+                                    <Input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="w-[90px] h-8 text-xs"
+                                    />
+                                    <span className="text-xs text-muted-foreground">s/d</span>
+                                    <Input
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-[90px] h-8 text-xs"
+                                    />
+                                </div>
+                            </>
+                        )}
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">
                                 Baris per halaman:
@@ -618,19 +640,21 @@ export default function CarWashIndex() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Select value={staffId} onValueChange={setStaffId}>
-                                <SelectTrigger className="w-[140px] h-8 text-xs">
-                                    <SelectValue placeholder="Semua Kasir" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all" className="text-xs">Semua Kasir</SelectItem>
-                                    {staffList.map((staff: any) => (
-                                        <SelectItem key={staff.id} value={staff.id.toString()} className="text-xs">{staff.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {!isKasir && (
+                            <div className="flex items-center gap-2">
+                                <Select value={staffId} onValueChange={setStaffId}>
+                                    <SelectTrigger className="w-[140px] h-8 text-xs">
+                                        <SelectValue placeholder="Semua Kasir" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" className="text-xs">Semua Kasir</SelectItem>
+                                        {staffList.map((staff: any) => (
+                                            <SelectItem key={staff.id} value={staff.id.toString()} className="text-xs">{staff.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <div className="relative w-full max-w-xs">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
