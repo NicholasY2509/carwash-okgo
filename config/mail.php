@@ -39,7 +39,7 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => 'smtps',
+            'scheme' => 'ssl',
             'host' => 'mail.okgo.co.id',
             'port' => 465,
             'username' => 'kuroautowash@carwash.okgo.co.id',
