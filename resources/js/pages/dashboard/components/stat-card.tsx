@@ -122,7 +122,7 @@ export function PaymentTypeStats({
                 </div>
                 <div className="flex items-center justify-end mt-4">
                     <span className="text-lg font-bold text-primary">
-                        Total: {stats.reduce((acc, stat) => acc + stat.total, 0)}
+                        Total: {stats.reduce((acc, stat) => acc + Number(stat.total), 0)}
                     </span>
                 </div>
             </CardContent>
