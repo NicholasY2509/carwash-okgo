@@ -96,7 +96,7 @@ export default function CarWashCreate() {
     const paymentOptions: { label: string; type: FormType }[] = [
         { label: "Langsung", type: "Cash" },
         { label: "Voucher", type: "Voucher" },
-        // { label: "Garansi Hujan", type: "Return" },
+        { label: "Garansi Hujan", type: "Return" },
     ];
 
     const formRef = useRef<CreateCashPurchaseHandle>(null);
@@ -149,8 +149,8 @@ export default function CarWashCreate() {
             stall_id: selectedStallId
                 ? parseInt(selectedStallId)
                 : stalls.length > 0
-                  ? stalls[0].id
-                  : 1,
+                    ? stalls[0].id
+                    : 1,
             product_id: String(selectedProduct?.id || ""),
             payment_method: paymentMethod,
             nominal_bayar: nilaiBayar,
@@ -351,65 +351,64 @@ export default function CarWashCreate() {
                                     {(activeForm === "Cash" ||
                                         (activeForm === "Voucher" &&
                                             itemsPrice > 0)) && (
-                                        <div className="space-y-3">
-                                            <Label required>
-                                                Metode Pembayaran
-                                            </Label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                {[
-                                                    {
-                                                        value: "Cash",
-                                                        label: "Cash",
-                                                        icon: Banknote,
-                                                    },
-                                                    {
-                                                        value: "Debit/Credit",
-                                                        label: "Card",
-                                                        icon: CreditCard,
-                                                    },
-                                                    {
-                                                        value: "Transfer",
-                                                        label: "Transfer",
-                                                        icon: Landmark,
-                                                    },
-                                                    {
-                                                        value: "QRIS",
-                                                        label: "QRIS",
-                                                        icon: QrCode,
-                                                    },
-                                                ].map((method) => {
-                                                    const isSelected =
-                                                        paymentMethod ===
-                                                        method.value;
-                                                    const IconComponent =
-                                                        method.icon;
-                                                    return (
-                                                        <button
-                                                            key={method.value}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setPaymentMethod(
-                                                                    method.value,
-                                                                )
-                                                            }
-                                                            className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${
-                                                                isSelected
+                                            <div className="space-y-3">
+                                                <Label required>
+                                                    Metode Pembayaran
+                                                </Label>
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {[
+                                                        {
+                                                            value: "Cash",
+                                                            label: "Cash",
+                                                            icon: Banknote,
+                                                        },
+                                                        {
+                                                            value: "Debit/Credit",
+                                                            label: "Card",
+                                                            icon: CreditCard,
+                                                        },
+                                                        {
+                                                            value: "Transfer",
+                                                            label: "Transfer",
+                                                            icon: Landmark,
+                                                        },
+                                                        {
+                                                            value: "QRIS",
+                                                            label: "QRIS",
+                                                            icon: QrCode,
+                                                        },
+                                                    ].map((method) => {
+                                                        const isSelected =
+                                                            paymentMethod ===
+                                                            method.value;
+                                                        const IconComponent =
+                                                            method.icon;
+                                                        return (
+                                                            <button
+                                                                key={method.value}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setPaymentMethod(
+                                                                        method.value,
+                                                                    )
+                                                                }
+                                                                className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all duration-200 ${isSelected
                                                                     ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm font-semibold"
                                                                     : "border-muted bg-card hover:bg-accent text-card-foreground"
-                                                            }`}
-                                                        >
-                                                            <IconComponent
-                                                                className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`}
-                                                            />
-                                                            <span className="text-sm">
-                                                                {method.label}
-                                                            </span>
-                                                        </button>
-                                                    );
-                                                })}
+                                                                    }`}
+                                                            >
+                                                                <IconComponent
+                                                                    className={`w-5 h-5 ${isSelected ? "text-blue-600" : "text-muted-foreground"}`}
+                                                                />
+                                                                <span className="text-sm">
+                                                                    {method.label}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
                                 </div>
                             </div>
                             <TransactionFooter
